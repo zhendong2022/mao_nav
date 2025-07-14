@@ -18,7 +18,7 @@
 - 🛠️ **易于定制** - 简单的配置即可个性化你的导航
 
 
-## 📦 部署到 Cloudflare Pages
+## 🚀 快速开始
 
 ### 🚀 一键部署到 Cloudflare（推荐）
 
@@ -89,7 +89,7 @@ categories.value = await response.json()
 **注意**：大多数用户直接使用本地 `mock_data.js` 就足够了，R2 存储适合需要动态更新数据或多人协作管理的场景。
 
 
-## 🚀 快速开始
+
 
 ### 本地开发
 
