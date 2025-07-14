@@ -17,6 +17,78 @@
 - 💾 **数据存储** - 可选择使用 Cloudflare R2 存储数据
 - 🛠️ **易于定制** - 简单的配置即可个性化你的导航
 
+
+## 📦 部署到 Cloudflare Pages
+
+### 🚀 一键部署到 Cloudflare（推荐）
+
+**1. Fork 本项目**
+- 点击页面右上角的 **"Fork"** 按钮
+- 将项目 Fork 到你的 GitHub 账号下
+
+**2. 在 Cloudflare Pages 控制台部署**
+1. 访问 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. 注册/登录 Cloudflare 账号（免费）
+3. 点击左侧菜单 **"Workers & Pages"**
+4. 点击 **"Create application"** → **"Pages"** → **"Connect to Git"**
+5. 授权 GitHub 并选择你 Fork 的 `mao_nav` 仓库
+6. 配置构建设置：
+   - **Framework preset**: `Vue`
+   - **Build command**: `npm run build`
+   - **Build output directory**: `dist`
+
+7. 点击 **"Save and Deploy"**
+
+✅ **完成！** 几分钟后你就有了自己的导航网站，每次修改代码都会自动重新部署。
+
+**3. 自定义你的导航**
+- 编辑 `src/mock/mock_data.js` 文件，添加你自己的网站分类和链接
+- 提交更改，Cloudflare 会自动重新部署
+
+**4. 绑定自定义域名（可选）**
+- 在 Cloudflare Pages 项目设置中点击 **"Custom domains"**
+- 添加你的域名并按提示配置 DNS
+
+## 🗃️ 使用 R2 存储数据（高级功能，可选）
+
+如果你想使用 Cloudflare R2 来存储导航数据而不是本地 `mock_data.js` 文件：
+
+**1. 创建 R2 存储桶并上传数据**
+```bash
+# 安装 Wrangler CLI
+npm install -g wrangler
+
+# 登录 Cloudflare
+wrangler login
+
+# 创建存储桶
+wrangler r2 bucket create navigation-data
+
+# 将你的导航数据上传为 JSON 文件
+# 创建 categories.json 文件，内容与 mock_data.js 中的数据结构相同
+wrangler r2 object put navigation-data/categories.json --file=categories.json
+```
+
+**2. 启用 R2 存储桶的公开访问**
+```bash
+wrangler r2 bucket create navigation-data --public
+```
+
+**3. 修改代码**
+编辑 `src/apis/useNavigation.js`，将注释的 R2 代码取消注释：
+```javascript
+// 替换这行：
+categories.value = mockData.categories
+
+// 为：
+const response = await fetch('https://your-bucket-name.r2.dev/categories.json')
+if (!response.ok) throw new Error('Failed to fetch from R2')
+categories.value = await response.json()
+```
+
+**注意**：大多数用户直接使用本地 `mock_data.js` 就足够了，R2 存储适合需要动态更新数据或多人协作管理的场景。
+
+
 ## 🚀 快速开始
 
 ### 本地开发
@@ -93,76 +165,6 @@ export const mockData = {
 - 主要样式文件：`src/assets/main.css`
 - 基础样式：`src/assets/base.css`
 
-## 📦 部署到 Cloudflare Pages
-
-### 🚀 一键部署到 Cloudflare（推荐）
-
-**1. Fork 本项目**
-- 点击页面右上角的 **"Fork"** 按钮
-- 将项目 Fork 到你的 GitHub 账号下
-
-**2. 在 Cloudflare Pages 控制台部署**
-1. 访问 [Cloudflare Dashboard](https://dash.cloudflare.com)
-2. 注册/登录 Cloudflare 账号（免费）
-3. 点击左侧菜单 **"Workers & Pages"**
-4. 点击 **"Create application"** → **"Pages"** → **"Connect to Git"**
-5. 授权 GitHub 并选择你 Fork 的 `mao_nav` 仓库
-6. 配置构建设置：
-   - **Framework preset**: `Vue`
-   - **Build command**: `npm run build`
-   - **Build output directory**: `dist`
-   - **Node.js version**: `18`
-
-7. 点击 **"Save and Deploy"**
-
-✅ **完成！** 几分钟后你就有了自己的导航网站，每次修改代码都会自动重新部署。
-
-**3. 自定义你的导航**
-- 编辑 `src/mock/mock_data.js` 文件，添加你自己的网站分类和链接
-- 提交更改，Cloudflare 会自动重新部署
-
-**4. 绑定自定义域名（可选）**
-- 在 Cloudflare Pages 项目设置中点击 **"Custom domains"**
-- 添加你的域名并按提示配置 DNS
-
-## 🗃️ 使用 R2 存储数据（高级功能，可选）
-
-如果你想使用 Cloudflare R2 来存储导航数据而不是本地 `mock_data.js` 文件：
-
-**1. 创建 R2 存储桶并上传数据**
-```bash
-# 安装 Wrangler CLI
-npm install -g wrangler
-
-# 登录 Cloudflare
-wrangler login
-
-# 创建存储桶
-wrangler r2 bucket create navigation-data
-
-# 将你的导航数据上传为 JSON 文件
-# 创建 categories.json 文件，内容与 mock_data.js 中的数据结构相同
-wrangler r2 object put navigation-data/categories.json --file=categories.json
-```
-
-**2. 启用 R2 存储桶的公开访问**
-```bash
-wrangler r2 bucket create navigation-data --public
-```
-
-**3. 修改代码**
-编辑 `src/apis/useNavigation.js`，将注释的 R2 代码取消注释：
-```javascript
-// 替换这行：
-categories.value = mockData.categories
-
-// 为：
-const response = await fetch('https://your-bucket-name.r2.dev/categories.json')
-if (!response.ok) throw new Error('Failed to fetch from R2')
-categories.value = await response.json()
-```
-
-**注意**：大多数用户直接使用本地 `mock_data.js` 就足够了，R2 存储适合需要动态更新数据或多人协作管理的场景。
 
 ## 🛠️ 开发命令
 
