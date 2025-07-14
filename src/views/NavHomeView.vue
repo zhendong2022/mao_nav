@@ -5,7 +5,7 @@
       <!-- Logo区域 -->
       <div class="logo-section">
         <img src="@/assets/logo.png" alt="logo" class="logo" />
-        <h1 class="site-title">猫猫导航</h1>
+        <h1 class="site-title">{{ title || '猫猫导航' }}</h1>
       </div>
 
       <!-- 分类导航 -->
@@ -111,7 +111,7 @@ import bingLogo from '@/assets/bing.png'
 import duckLogo from '@/assets/duck.png'
 
 // 使用导航API
-const { categories, loading, error, fetchCategories } = useNavigation()
+const { categories, title, loading, error, fetchCategories } = useNavigation()
 
 // 响应式数据
 const searchQuery = ref('') // 搜索查询
