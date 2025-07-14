@@ -49,7 +49,7 @@
 - 在 Cloudflare Pages 项目设置中点击 **"Custom domains"**
 - 添加你的域名并按提示配置 DNS
 
-## 🗃️ 使用 R2 存储数据（高级功能，可选）
+#### 🗃️ 使用 R2 存储数据（高级功能，可选）
 
 如果你想使用 Cloudflare R2 来存储导航数据而不是本地 `mock_data.js` 文件：
 
