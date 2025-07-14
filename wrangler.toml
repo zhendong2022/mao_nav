@@ -1,0 +1,12 @@
+# wrangler.toml
+name = "mao_nav"
+compatibility_date = "2024-01-01"
+
+[build]
+command = "npm run build"
+cwd = "."
+
+[[r2_buckets]]
+binding = "NAV_BUCKET"
+bucket_name = "navigation-data"
+preview_bucket_name = "navigation-data-dev"
