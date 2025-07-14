@@ -405,8 +405,8 @@ onMounted(() => {
 }
 
 .category-title .category-name {
-  margin-left: 14px;
-  font-size: 28px;
+  margin-left: 10px;
+  font-size: 26px;
 }
 
 .sites-grid {

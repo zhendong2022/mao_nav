@@ -11,19 +11,24 @@ export function useNavigation() {
     error.value = null
 
     try {
-      // 开发环境用mock数据
+      // 开发环境模拟网络延迟
       if (import.meta.env.DEV) {
-        await new Promise(resolve => setTimeout(resolve, 500)) // 模拟网络延迟
-        categories.value = mockData.categories
-      } else {
-        // 生产环境调用API
-        const response = await fetch('/api/categories')
-        if (!response.ok) throw new Error('Failed to fetch')
-        categories.value = await response.json()
+        await new Promise(resolve => setTimeout(resolve, 500))
       }
+
+      // 默认使用本地mock数据
+      categories.value = mockData.categories
+
+      // 🚀 可选：如果你想使用 Cloudflare R2 存储数据，可以替换为：
+      // const response = await fetch('https://your-r2-bucket.r2.dev/categories.json')
+      // if (!response.ok) throw new Error('Failed to fetch from R2')
+      // categories.value = await response.json()
+
     } catch (err) {
       error.value = err.message
       console.error('Error fetching categories:', err)
+      // 兜底：始终返回 mock 数据
+      categories.value = mockData.categories
     } finally {
       loading.value = false
     }
