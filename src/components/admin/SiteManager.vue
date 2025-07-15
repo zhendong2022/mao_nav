@@ -288,22 +288,114 @@ const autoDetectIcon = async () => {
 
   try {
     const url = new URL(formData.value.url)
-    const faviconUrl = `${url.protocol}//${url.host}/favicon.ico`
+    const baseUrl = `${url.protocol}//${url.host}`
 
-    // 测试图标是否可用
-    const img = new Image()
-    img.onload = () => {
-      formData.value.icon = faviconUrl
-      iconError.value = false
+    // 首先尝试默认的 favicon.ico
+    const faviconUrl = `${baseUrl}/favicon.ico`
+
+    const testImage = (imageUrl) => {
+      return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => resolve(imageUrl)
+        img.onerror = () => reject()
+        img.src = imageUrl
+      })
     }
-         img.onerror = () => {
-       // 如果默认favicon失败，可以尝试其他路径
-       formData.value.icon = faviconUrl // 先使用默认的
-     }
-     img.src = faviconUrl
-   } catch {
-     alert('URL格式不正确')
-   }
+
+    try {
+      // 尝试默认 favicon
+      const iconUrl = await testImage(faviconUrl)
+      formData.value.icon = iconUrl
+      iconError.value = false
+      return
+    } catch {
+      // 默认 favicon 失败，尝试从 HTML 中提取
+      console.log('默认 favicon 不可用，尝试从 HTML 中提取...')
+    }
+
+    // 从 HTML 中提取图标信息
+    try {
+      // 注意：这里可能遇到 CORS 问题，在生产环境中可能需要通过代理服务器获取
+      const response = await fetch(formData.value.url, {
+        mode: 'cors',
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('无法获取网页内容')
+      }
+
+      const html = await response.text()
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(html, 'text/html')
+
+      // 查找各种可能的图标 link 标签
+      const iconSelectors = [
+        'link[rel="icon"]',
+        'link[rel="shortcut icon"]',
+        'link[rel="apple-touch-icon"]',
+        'link[rel="apple-touch-icon-precomposed"]',
+        'link[rel="mask-icon"]'
+      ]
+
+      let foundIcon = null
+
+      for (const selector of iconSelectors) {
+        const linkElement = doc.querySelector(selector)
+        if (linkElement) {
+          let href = linkElement.getAttribute('href')
+          if (href) {
+            // 处理相对路径
+            if (href.startsWith('//')) {
+              href = url.protocol + href
+            } else if (href.startsWith('/')) {
+              href = baseUrl + href
+            } else if (!href.startsWith('http')) {
+              href = baseUrl + '/' + href
+            }
+
+            foundIcon = href
+            break
+          }
+        }
+      }
+
+      if (foundIcon) {
+        // 测试提取到的图标是否可用
+        try {
+          await testImage(foundIcon)
+          formData.value.icon = foundIcon
+          iconError.value = false
+          console.log('成功从 HTML 中提取图标:', foundIcon)
+          return
+        } catch {
+          console.log('提取的图标不可用:', foundIcon)
+        }
+      }
+
+      // 如果都失败了，使用一个通用的图标服务
+      const fallbackIcon = `https://www.google.com/s2/favicons?domain=${url.host}&sz=64`
+      formData.value.icon = fallbackIcon
+      iconError.value = false
+      console.log('使用备用图标服务')
+
+    } catch (fetchError) {
+      console.log('获取 HTML 失败，可能是 CORS 限制:', fetchError.message)
+
+      // 如果因为 CORS 无法获取 HTML，使用 Google 的 favicon 服务作为备选
+      const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${url.host}&sz=64`
+      formData.value.icon = googleFaviconUrl
+      iconError.value = false
+
+      alert('由于跨域限制无法直接获取网站图标，已使用备用图标服务。如需获取准确图标，请手动输入图标URL。')
+    }
+
+  } catch (error) {
+    alert('URL格式不正确')
+    console.error('URL 解析错误:', error)
+  }
 }
 
 // 保存站点
