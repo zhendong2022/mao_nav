@@ -161,7 +161,7 @@ export const mockData = {
           "name": "Android Studio",
           "url": "https://developer.android.com/studio",
           "description": "Android官方开发工具",
-          "icon": "https://developer.android.com/images/brand/Android_Robot.png"
+          "icon": "https://developer.android.com/favicon.ico"
         },
         {
           "id": "oracle-java",
