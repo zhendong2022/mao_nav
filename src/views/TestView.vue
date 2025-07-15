@@ -10,7 +10,7 @@
       </div>
     </div>
 
-    <div class="test-section">
+    <!-- <div class="test-section">
       <h2>GitHub API 测试</h2>
       <button @click="testGitHubAPI" :disabled="apiTesting">
         {{ apiTesting ? '测试中...' : '测试GitHub API' }}
@@ -36,7 +36,7 @@
       <div v-if="githubResult" class="results">
         <pre>{{ githubResult }}</pre>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 

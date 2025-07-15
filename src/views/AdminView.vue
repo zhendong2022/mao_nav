@@ -33,6 +33,7 @@
         <div class="header-content">
           <h1>🛠️ 导航站管理</h1>
           <div class="header-actions">
+            <button @click="debugLoadData" class="debug-btn" hidden="true">🔍 调试加载</button>
             <span class="user-info">管理员</span>
             <button @click="logout" class="logout-btn">退出</button>
           </div>
@@ -158,13 +159,15 @@ const handleLogin = async () => {
     if (loginPassword.value === adminPassword) {
       isAuthenticated.value = true
       localStorage.setItem('admin_authenticated', 'true')
+
+      // 登录成功后加载数据，但不重复设置loading
+      loading.value = false
       await loadCategories()
     } else {
       throw new Error('密钥错误，请重新输入')
     }
   } catch (error) {
     loginError.value = error.message
-  } finally {
     loading.value = false
   }
 }
@@ -177,26 +180,78 @@ const logout = () => {
   router.push('/')
 }
 
+// 调试加载数据
+const debugLoadData = async () => {
+  console.log('=== 开始调试加载数据 ===')
+  console.log('当前环境变量:', {
+    VITE_GITHUB_TOKEN: import.meta.env.VITE_GITHUB_TOKEN ? '已配置' : '未配置',
+    VITE_GITHUB_OWNER: import.meta.env.VITE_GITHUB_OWNER,
+    VITE_GITHUB_REPO: import.meta.env.VITE_GITHUB_REPO,
+    VITE_GITHUB_BRANCH: import.meta.env.VITE_GITHUB_BRANCH
+  })
+
+  try {
+    console.log('直接调用loadCategoriesFromGitHub...')
+    const data = await loadCategoriesFromGitHub()
+    console.log('调用成功，返回数据:', data)
+
+    showDialog(
+      'success',
+      '🎉 调试成功',
+      '直接调用GitHub API成功',
+      [`• 数据类型: ${typeof data}`, `• 包含categories: ${!!data.categories}`, `• 分类数量: ${data.categories?.length || 0}`]
+    )
+  } catch (error) {
+    console.error('直接调用失败:', error)
+    showDialog(
+      'error',
+      '❌ 调试失败',
+      '直接调用GitHub API失败',
+      [`• 错误信息: ${error.message}`, `• 错误类型: ${error.constructor.name}`]
+    )
+  }
+}
+
 // 加载分类数据
 const loadCategories = async () => {
   loading.value = true
   try {
+    console.log('开始从GitHub加载数据...')
     const data = await loadCategoriesFromGitHub()
+    console.log('GitHub数据加载成功:', data)
     categories.value = data.categories || []
     navTitle.value = data.title || '猫猫导航' // 保存标题
+
+    // 显示加载成功提示
+    showDialog(
+      'success',
+      '✅ 数据加载成功',
+      '已成功从GitHub加载最新数据',
+      [`• 分类数量: ${categories.value.length}`, `• 网站标题: ${navTitle.value}`]
+    )
   } catch (error) {
-    console.error('加载数据失败:', error)
+    console.error('从GitHub加载数据失败:', error)
+
+    // 显示GitHub错误，但尝试加载本地数据
+    showDialog(
+      'error',
+      '⚠️ GitHub加载失败',
+      'GitHub API调用失败，已切换到本地数据',
+      [`• 错误详情: ${error.message}`, `• 建议：检查环境变量配置和网络连接`]
+    )
+
     // 如果GitHub加载失败，从本地mock数据加载
     try {
       const { mockData } = await import('../mock/mock_data.js')
       categories.value = mockData.categories || []
       navTitle.value = mockData.title || '猫猫导航' // 保存标题
+      console.log('本地数据加载成功，分类数量:', categories.value.length)
     } catch (fallbackError) {
       console.error('加载本地数据也失败:', fallbackError)
       showDialog(
         'error',
-        '❌ 加载失败',
-        '无法加载导航数据，请刷新页面重试',
+        '❌ 完全加载失败',
+        'GitHub和本地数据都无法加载，请刷新页面重试',
         [`• GitHub API错误: ${error.message}`, `• 本地数据错误: ${fallbackError.message}`]
       )
     }
@@ -260,7 +315,10 @@ onMounted(() => {
   const savedAuth = localStorage.getItem('admin_authenticated')
   if (savedAuth === 'true') {
     isAuthenticated.value = true
-    loadCategories()
+    // 延迟加载，确保组件完全挂载
+    setTimeout(() => {
+      loadCategories()
+    }, 100)
   }
 })
 </script>
@@ -391,6 +449,22 @@ onMounted(() => {
 .user-info {
   color: #7f8c8d;
   font-size: 14px;
+}
+
+.debug-btn {
+  padding: 8px 16px;
+  background: #f39c12;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+  margin-right: 15px;
+}
+
+.debug-btn:hover {
+  background: #e67e22;
 }
 
 .logout-btn {

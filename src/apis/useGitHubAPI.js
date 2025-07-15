@@ -35,7 +35,9 @@ export function useGitHubAPI() {
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒超时
 
     try {
+      console.log('发送GitHub API请求:', url)
       const response = await fetch(url, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/vnd.github.v3+json',
@@ -45,13 +47,27 @@ export function useGitHubAPI() {
       })
 
       clearTimeout(timeoutId)
+      console.log('GitHub API响应状态:', response.status, response.statusText)
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(`GitHub API Error: ${error.message}`)
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const error = await response.json()
+          errorMessage = `GitHub API Error: ${error.message}`
+        } catch {
+          // 如果无法解析错误响应，使用基本错误信息
+          console.log('无法解析GitHub API错误响应')
+        }
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
+      console.log('GitHub API响应数据:', data)
+
+      if (!data.content) {
+        throw new Error('GitHub API返回的数据中没有content字段')
+      }
+
       return {
         content: decodeURIComponent(escape(atob(data.content))), // 正确处理中文解码
         sha: data.sha,
@@ -59,9 +75,17 @@ export function useGitHubAPI() {
       }
     } catch (error) {
       clearTimeout(timeoutId)
+      console.error('GitHub API请求失败:', error)
+
       if (error.name === 'AbortError') {
         throw new Error('请求超时，请检查网络连接')
       }
+
+      // 检查是否是CORS相关错误
+      if (error.message.includes('CORS') || error.message.includes('Network')) {
+        throw new Error('网络请求失败，可能是CORS问题或网络连接问题')
+      }
+
       throw error
     }
   }
