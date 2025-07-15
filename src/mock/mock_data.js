@@ -104,7 +104,7 @@ export const mockData = {
           "name": "阿里云",
           "url": "https://www.aliyun.com",
           "description": "阿里巴巴云计算",
-          "icon": "https://www.aliyun.com/favicon.ico"
+          "icon": "https://img.alicdn.com/tfs/TB1_ZXuNcfpK1RjSZFOXXa6nFXa-32-32.ico"
         },
         {
           "id": "tencent-cloud",
@@ -226,7 +226,7 @@ export const mockData = {
           "name": "Figma",
           "url": "https://figma.com",
           "description": "UI设计工具",
-          "icon": "https://figma.com/favicon.ico"
+          "icon": "https://www.google.com/s2/favicons?domain=figma.com&sz=64"
         },
         {
           "id": "sketch",
