@@ -47,6 +47,35 @@
             @keyup.enter="handleSearch"
           />
         </div>
+
+        <!-- 移动端菜单按钮 -->
+        <button class="mobile-menu-btn" @click="toggleMobileMenu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+
+        <!-- 移动端分类菜单 -->
+        <div class="mobile-menu" :class="{ active: showMobileMenu }">
+          <div class="mobile-menu-header">
+            <h3>分类导航</h3>
+            <button class="close-btn" @click="closeMobileMenu">×</button>
+          </div>
+          <ul class="mobile-category-list">
+            <li
+              v-for="category in categories"
+              :key="category.id"
+              class="mobile-category-item"
+              @click="scrollToCategoryMobile(category.id)"
+            >
+              <span class="category-icon">{{ category.icon }}</span>
+              <span class="category-name">{{ category.name }}</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 移动端菜单遮罩 -->
+        <div class="mobile-menu-overlay" :class="{ active: showMobileMenu }" @click="closeMobileMenu"></div>
       </header>
 
       <!-- 导航内容区 -->
@@ -116,6 +145,7 @@ const { categories, title, loading, error, fetchCategories } = useNavigation()
 // 响应式数据
 const searchQuery = ref('') // 搜索查询
 const selectedEngine = ref('google') // 选中的搜索引擎
+const showMobileMenu = ref(false) // 移动端菜单显示状态
 
 // 搜索引擎配置
 const searchEngines = {
@@ -174,6 +204,25 @@ const handleSearch = () => {
 // 处理图片加载错误
 const handleImageError = (event) => {
   event.target.style.display = 'none'
+}
+
+// 移动端菜单控制
+const toggleMobileMenu = () => {
+  showMobileMenu.value = !showMobileMenu.value
+}
+
+const closeMobileMenu = () => {
+  showMobileMenu.value = false
+}
+
+// 移动端分类滚动
+const scrollToCategoryMobile = (categoryId) => {
+  closeMobileMenu() // 先关闭菜单
+
+  // 稍微延迟一下再滚动，确保菜单关闭动画完成
+  setTimeout(() => {
+    scrollToCategory(categoryId)
+  }, 200)
 }
 
 // 组件挂载时获取数据
@@ -285,6 +334,9 @@ onMounted(() => {
   position: sticky;
   top: 0;
   z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .search-container {
@@ -295,6 +347,7 @@ onMounted(() => {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  flex: 1;
 }
 
 .search-engine-selector {
@@ -343,6 +396,127 @@ onMounted(() => {
 
 .search-input::placeholder {
   color: #95a5a6;
+}
+
+/* 移动端菜单按钮 */
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #2c3e50;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+  background: #f8f9fa;
+}
+
+/* 移动端菜单 */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 280px;
+  height: 100vh;
+  background: white;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+}
+
+.mobile-menu.active {
+  right: 0;
+}
+
+.mobile-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+  background: #2c3e50;
+  color: white;
+}
+
+.mobile-menu-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-category-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mobile-category-item {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.mobile-category-item:hover {
+  background: #f8f9fa;
+}
+
+.mobile-category-item .category-icon {
+  font-size: 20px;
+  margin-right: 12px;
+  width: 24px;
+  text-align: center;
+}
+
+.mobile-category-item .category-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+/* 移动端菜单遮罩 */
+.mobile-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.mobile-menu-overlay.active {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* 内容区域样式 */
@@ -502,30 +676,49 @@ onMounted(() => {
   }
 
   .sidebar {
-    width: 100%;
-    height: 200px;
-    max-height: 200px;
-  }
-
-  .category-nav {
-    height: calc(200px - 120px);
+    display: none; /* 在移动端隐藏左侧边栏 */
   }
 
   .main-content {
-    height: calc(100vh - 200px);
+    height: 100vh;
+    margin-left: 0;
+  }
+
+  .search-header {
+    padding: 15px 20px;
+  }
+
+  .mobile-menu-btn {
+    display: block; /* 在移动端显示菜单按钮 */
+    flex-shrink: 0;
   }
 
   .sites-grid {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
 
-  .search-container {
-    flex-direction: column;
+  .site-card {
+    padding: 15px;
   }
 
-  .search-engine-selector,
-  .search-input {
-    border-radius: 0;
+  .category-title {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .category-title .category-icon {
+    font-size: 28px;
+    margin-right: 12px;
+  }
+
+  .category-title .category-name {
+    font-size: 22px;
+  }
+
+  .content-area {
+    padding: 20px 15px;
+    padding-bottom: 100px;
   }
 }
 </style>
