@@ -362,7 +362,7 @@ export const mockData = {
           "name": "JSON Formatter",
           "url": "https://jsonformatter.org",
           "description": "JSON格式化工具",
-          "icon": "https://jsonformatter.org/favicon.ico"
+          "icon": "https://external-content.duckduckgo.com/ip3/jsonformatter.org.ico"
         },
         {
           "id": "regex101",
@@ -376,14 +376,14 @@ export const mockData = {
           "name": "Can I Use",
           "url": "https://caniuse.com",
           "description": "浏览器兼容性查询",
-          "icon": "https://caniuse.com/favicon.ico"
+          "icon": "https://external-content.duckduckgo.com/ip3/caniuse.com.ico"
         },
         {
           "id": "tinypng",
           "name": "TinyPNG",
           "url": "https://tinypng.com",
           "description": "图片压缩工具",
-          "icon": "https://tinypng.com/favicon.ico"
+          "icon": "https://external-content.duckduckgo.com/ip3/tinypng.com.ico"
         }
       ]
     },
