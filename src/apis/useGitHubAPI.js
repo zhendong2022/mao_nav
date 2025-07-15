@@ -29,24 +29,40 @@ export function useGitHubAPI() {
     const { token, owner, repo } = getConfig()
 
     const url = `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'X-GitHub-Api-Version': '2022-11-28'
+
+    // 创建超时控制
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒超时
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        },
+        signal: controller.signal
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(`GitHub API Error: ${error.message}`)
       }
-    })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(`GitHub API Error: ${error.message}`)
-    }
-
-    const data = await response.json()
-    return {
-      content: decodeURIComponent(escape(atob(data.content))), // 正确处理中文解码
-      sha: data.sha,
-      path: data.path
+      const data = await response.json()
+      return {
+        content: decodeURIComponent(escape(atob(data.content))), // 正确处理中文解码
+        sha: data.sha,
+        path: data.path
+      }
+    } catch (error) {
+      clearTimeout(timeoutId)
+      if (error.name === 'AbortError') {
+        throw new Error('请求超时，请检查网络连接')
+      }
+      throw error
     }
   }
 
@@ -55,28 +71,44 @@ export function useGitHubAPI() {
     const { token, owner, repo, branch } = getConfig()
 
     const url = `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message,
-        content: btoa(unescape(encodeURIComponent(content))), // 处理中文编码
-        sha,
-        branch
+
+    // 创建超时控制
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15秒超时
+
+    try {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message,
+          content: btoa(unescape(encodeURIComponent(content))), // 处理中文编码
+          sha,
+          branch
+        }),
+        signal: controller.signal
       })
-    })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(`GitHub API Error: ${error.message}`)
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(`GitHub API Error: ${error.message}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      clearTimeout(timeoutId)
+      if (error.name === 'AbortError') {
+        throw new Error('保存超时，请检查网络连接')
+      }
+      throw error
     }
-
-    return await response.json()
   }
 
   // 生成mock_data.js文件内容

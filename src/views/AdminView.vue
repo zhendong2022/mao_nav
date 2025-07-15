@@ -41,6 +41,14 @@
 
       <!-- 主要内容 -->
       <main class="admin-main">
+        <!-- 加载状态显示 -->
+        <div v-if="loading" class="loading-overlay">
+          <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>正在加载数据...</p>
+          </div>
+        </div>
+
         <div class="admin-tabs">
           <button
             class="tab-btn"
@@ -171,6 +179,7 @@ const logout = () => {
 
 // 加载分类数据
 const loadCategories = async () => {
+  loading.value = true
   try {
     const data = await loadCategoriesFromGitHub()
     categories.value = data.categories || []
@@ -178,9 +187,21 @@ const loadCategories = async () => {
   } catch (error) {
     console.error('加载数据失败:', error)
     // 如果GitHub加载失败，从本地mock数据加载
-    const { mockData } = await import('../mock/mock_data.js')
-    categories.value = mockData.categories || []
-    navTitle.value = mockData.title || '猫猫导航' // 保存标题
+    try {
+      const { mockData } = await import('../mock/mock_data.js')
+      categories.value = mockData.categories || []
+      navTitle.value = mockData.title || '猫猫导航' // 保存标题
+    } catch (fallbackError) {
+      console.error('加载本地数据也失败:', fallbackError)
+      showDialog(
+        'error',
+        '❌ 加载失败',
+        '无法加载导航数据，请刷新页面重试',
+        [`• GitHub API错误: ${error.message}`, `• 本地数据错误: ${fallbackError.message}`]
+      )
+    }
+  } finally {
+    loading.value = false
   }
 }
 
