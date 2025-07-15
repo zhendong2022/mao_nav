@@ -169,10 +169,10 @@ watch(() => props.categories, (newCategories) => {
   localCategories.value = JSON.parse(JSON.stringify(newCategories))
 }, { immediate: true, deep: true })
 
-// 监听本地数据变化，同步到父组件
-watch(localCategories, (newCategories) => {
-  emit('update', newCategories)
-}, { deep: true })
+// 手动同步到父组件的函数，避免无限循环
+const syncToParent = () => {
+  emit('update', localCategories.value)
+}
 
 // 移动分类
 const moveCategory = (index, direction) => {
@@ -189,6 +189,7 @@ const moveCategory = (index, direction) => {
   })
 
   localCategories.value = categories
+  syncToParent()
 }
 
 // 编辑分类
@@ -205,6 +206,7 @@ const editCategory = (category) => {
 const deleteCategory = (categoryId) => {
   if (confirm('确定要删除这个分类吗？这将同时删除分类下的所有站点。')) {
     localCategories.value = localCategories.value.filter(cat => cat.id !== categoryId)
+    syncToParent()
   }
 }
 
@@ -229,6 +231,7 @@ const saveCategory = () => {
     localCategories.value.push(newCategory)
   }
 
+  syncToParent()
   closeModal()
 }
 

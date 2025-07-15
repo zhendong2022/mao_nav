@@ -211,10 +211,10 @@ watch(() => props.categories, (newCategories) => {
   localCategories.value = JSON.parse(JSON.stringify(newCategories))
 }, { immediate: true, deep: true })
 
-// 监听本地数据变化，同步到父组件
-watch(localCategories, (newCategories) => {
-  emit('update', newCategories)
-}, { deep: true })
+// 手动同步到父组件的函数，避免无限循环
+const syncToParent = () => {
+  emit('update', localCategories.value)
+}
 
 // 计算属性
 const allSites = computed(() => {
@@ -274,6 +274,7 @@ const deleteSite = (site) => {
     const category = localCategories.value.find(cat => cat.id === site.categoryId)
     if (category && category.sites) {
       category.sites = category.sites.filter(s => s.id !== site.id)
+      syncToParent()
     }
   }
 }
@@ -341,6 +342,7 @@ const saveSite = () => {
     category.sites.push(newSite)
   }
 
+  syncToParent()
   closeModal()
 }
 

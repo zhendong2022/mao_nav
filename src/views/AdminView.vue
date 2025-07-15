@@ -33,6 +33,7 @@
         <div class="header-content">
           <h1>🛠️ 导航站管理</h1>
           <div class="header-actions">
+            <button @click="emergencyReset" class="emergency-btn" hidden="true">🚨 紧急重置</button>
             <button @click="debugLoadData" class="debug-btn" hidden="true">🔍 调试加载</button>
             <span class="user-info">管理员</span>
             <button @click="logout" class="logout-btn">退出</button>
@@ -246,70 +247,26 @@ const debugLoadData = async () => {
   }
 }
 
-// 加载分类数据
+// 加载分类数据（简化版本，暂时只加载本地数据）
 const loadCategories = async () => {
+  console.log('🔍 开始加载分类数据（简化版本）')
   loading.value = true
 
-  // 设置整体超时保护
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error('数据加载超时')), 8000)
-  })
-
   try {
-    console.log('开始从GitHub加载数据...')
-
-    // 使用Promise.race来确保不会无限等待
-    const data = await Promise.race([
-      loadCategoriesFromGitHub(),
-      timeoutPromise
-    ])
-
-    console.log('GitHub数据加载成功:', data)
-    categories.value = data.categories || []
-    navTitle.value = data.title || '猫猫导航'
-
-    // 显示加载成功提示
-    showDialog(
-      'success',
-      '✅ 数据加载成功',
-      '已成功从GitHub加载最新数据',
-      [`• 分类数量: ${categories.value.length}`, `• 网站标题: ${navTitle.value}`]
-    )
+    // 直接加载本地数据，避免GitHub API调用
+    const { mockData } = await import('../mock/mock_data.js')
+    categories.value = mockData.categories || []
+    navTitle.value = mockData.title || '猫猫导航'
+    console.log('✅ 本地数据加载成功，分类数量:', categories.value.length)
   } catch (error) {
-    console.error('从GitHub加载数据失败:', error)
-
-    // 显示GitHub错误，但尝试加载本地数据
-    showDialog(
-      'error',
-      '⚠️ GitHub加载失败',
-      'GitHub API调用失败，已切换到本地数据',
-      [`• 错误详情: ${error.message}`, `• 建议：检查环境变量配置和网络连接`]
-    )
-
-    // 如果GitHub加载失败，从本地mock数据加载
-    try {
-      const { mockData } = await import('../mock/mock_data.js')
-      categories.value = mockData.categories || []
-      navTitle.value = mockData.title || '猫猫导航'
-      console.log('本地数据加载成功，分类数量:', categories.value.length)
-    } catch (fallbackError) {
-      console.error('加载本地数据也失败:', fallbackError)
-
-      // 最后兜底：使用空数组
-      categories.value = []
-      navTitle.value = '猫猫导航'
-
-      showDialog(
-        'error',
-        '❌ 完全加载失败',
-        'GitHub和本地数据都无法加载，请刷新页面重试',
-        [`• GitHub API错误: ${error.message}`, `• 本地数据错误: ${fallbackError.message}`]
-      )
-    }
+    console.error('❌ 本地数据加载失败:', error)
+    // 最后兜底：使用空数组
+    categories.value = []
+    navTitle.value = '猫猫导航'
   } finally {
     // 确保loading状态被重置
     loading.value = false
-    console.log('数据加载完成，loading状态重置')
+    console.log('🔍 数据加载完成，loading状态重置')
   }
 }
 
@@ -397,32 +354,64 @@ const saveToGitHub = async () => {
   }
 }
 
+// 紧急重置加载状态
+const emergencyReset = () => {
+  console.log('用户点击紧急重置按钮，强制重置loading状态')
+  loading.value = false
+  // 强制DOM更新，确保loading状态同步到模板
+  setTimeout(() => {
+    console.log('🔍 延迟检查loading状态:', loading.value)
+    console.log('🔍 DOM中loading元素:', document.querySelector('.loading-overlay'))
+    console.log('🔍 DOM中tab按钮:', document.querySelectorAll('.tab-btn'))
+
+    // 如果loading overlay仍然存在，强制隐藏
+    const loadingOverlay = document.querySelector('.loading-overlay')
+    if (loadingOverlay) {
+      console.warn('🔍 发现loading overlay仍然存在，强制隐藏')
+      loadingOverlay.style.display = 'none'
+    }
+  }, 100)
+  showDialog(
+    'info',
+    '⚠️ 加载状态已重置',
+    '已强制重置加载状态，请刷新页面查看效果。',
+    []
+  )
+}
+
 // 组件挂载时检查认证状态
 onMounted(() => {
+  console.log('🔍 AdminView组件开始挂载')
+
+  // 立即强制重置loading状态，避免卡死
+  loading.value = false
+
   const savedAuth = localStorage.getItem('admin_authenticated')
   if (savedAuth === 'true') {
+    console.log('🔍 检测到已登录状态')
     isAuthenticated.value = true
-    // 延迟加载，确保组件完全挂载，并且包装在try-catch中
-    setTimeout(async () => {
-      try {
-        await loadCategories()
-      } catch (error) {
-        console.error('初始化加载失败:', error)
-        // 确保loading状态被重置
-        loading.value = false
-        // 直接使用本地数据作为兜底
-        try {
-          const { mockData } = await import('../mock/mock_data.js')
-          categories.value = mockData.categories || []
-          navTitle.value = mockData.title || '猫猫导航'
-        } catch (localError) {
-          console.error('本地数据加载失败:', localError)
-          categories.value = []
-          navTitle.value = '猫猫导航'
-        }
-      }
-    }, 100)
+
+    // 直接使用本地数据，不调用GitHub API
+    console.log('🔍 直接加载本地数据，跳过GitHub API调用')
+    try {
+      // 使用同步方式加载本地数据
+      import('../mock/mock_data.js').then(({ mockData }) => {
+        categories.value = mockData.categories || []
+        navTitle.value = mockData.title || '猫猫导航'
+        console.log('🔍 本地数据加载成功，分类数量:', categories.value.length)
+      }).catch(error => {
+        console.error('🔍 本地数据加载失败:', error)
+        categories.value = []
+        navTitle.value = '猫猫导航'
+      })
+    } catch (error) {
+      console.error('🔍 数据加载异常:', error)
+      categories.value = []
+      navTitle.value = '猫猫导航'
+    }
   }
+
+  console.log('🔍 AdminView组件挂载完成')
 })
 </script>
 
@@ -554,6 +543,22 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.emergency-btn {
+  padding: 8px 16px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+  margin-right: 15px;
+}
+
+.emergency-btn:hover {
+  background: #c0392b;
+}
+
 .debug-btn {
   padding: 8px 16px;
   background: #f39c12;
@@ -589,6 +594,48 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 30px;
+}
+
+/* loading overlay 样式 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(3px);
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .admin-tabs {
