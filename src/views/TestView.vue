@@ -41,14 +41,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useGitHubAPI } from '@/apis/useGitHubAPI.js'
+// import { ref } from 'vue'
+// import { useGitHubAPI } from '@/apis/useGitHubAPI.js'
 
-const envResult = ref('')
-const apiResult = ref(null)
-const githubResult = ref('')
-const apiTesting = ref(false)
-const githubTesting = ref(false)
+// const envResult = ref('')
+// const apiResult = ref(null)
+// const githubResult = ref('')
+// const apiTesting = ref(false)
+// const githubTesting = ref(false)
 
 const checkEnvVars = () => {
   const result = {
@@ -65,83 +65,83 @@ const checkEnvVars = () => {
     }
   }
 
-  envResult.value = JSON.stringify(result, null, 2)
+  // envResult.value = JSON.stringify(result, null, 2)
   console.log('环境变量测试结果:', result)
 }
 
-const testGitHubAPI = async () => {
-  apiTesting.value = true
+// const testGitHubAPI = async () => {
+//   apiTesting.value = true
 
-  try {
-    const token = import.meta.env.VITE_GITHUB_TOKEN
-    const owner = import.meta.env.VITE_GITHUB_OWNER
-    const repo = import.meta.env.VITE_GITHUB_REPO
+//   try {
+//     const token = import.meta.env.VITE_GITHUB_TOKEN
+//     const owner = import.meta.env.VITE_GITHUB_OWNER
+//     const repo = import.meta.env.VITE_GITHUB_REPO
 
-    if (!token || !owner || !repo) {
-      apiResult.value = {
-        status: 'ERROR',
-        url: 'N/A',
-        headers: 'N/A',
-        response: '环境变量未配置完整'
-      }
-      return
-    }
+//     if (!token || !owner || !repo) {
+//       apiResult.value = {
+//         status: 'ERROR',
+//         url: 'N/A',
+//         headers: 'N/A',
+//         response: '环境变量未配置完整'
+//       }
+//       return
+//     }
 
-    const url = `https://api.github.com/repos/${owner}/${repo}/contents/src/mock/mock_data.js`
+//     const url = `https://api.github.com/repos/${owner}/${repo}/contents/src/mock/mock_data.js`
 
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
-    })
+//     const response = await fetch(url, {
+//       headers: {
+//         'Authorization': `Bearer ${token}`,
+//         'Accept': 'application/vnd.github.v3+json',
+//         'X-GitHub-Api-Version': '2022-11-28'
+//       }
+//     })
 
-    const responseHeaders = {}
-    for (const [key, value] of response.headers.entries()) {
-      responseHeaders[key] = value
-    }
+//     const responseHeaders = {}
+//     for (const [key, value] of response.headers.entries()) {
+//       responseHeaders[key] = value
+//     }
 
-    const responseText = await response.text()
-    let parsedResponse
-    try {
-      parsedResponse = JSON.parse(responseText)
-    } catch {
-      parsedResponse = responseText
-    }
+//     const responseText = await response.text()
+//     let parsedResponse
+//     try {
+//       parsedResponse = JSON.parse(responseText)
+//     } catch {
+//       parsedResponse = responseText
+//     }
 
-    apiResult.value = {
-      status: `${response.status} ${response.statusText}`,
-      url: url,
-      headers: JSON.stringify(responseHeaders, null, 2),
-      response: typeof parsedResponse === 'object' ?
-        JSON.stringify(parsedResponse, null, 2) : parsedResponse
-    }
-  } catch (error) {
-    apiResult.value = {
-      status: 'ERROR',
-      url: 'N/A',
-      headers: 'N/A',
-      response: error.message
-    }
-  } finally {
-    apiTesting.value = false
-  }
-}
+//     apiResult.value = {
+//       status: `${response.status} ${response.statusText}`,
+//       url: url,
+//       headers: JSON.stringify(responseHeaders, null, 2),
+//       response: typeof parsedResponse === 'object' ?
+//         JSON.stringify(parsedResponse, null, 2) : parsedResponse
+//     }
+//   } catch (error) {
+//     apiResult.value = {
+//       status: 'ERROR',
+//       url: 'N/A',
+//       headers: 'N/A',
+//       response: error.message
+//     }
+//   } finally {
+//     apiTesting.value = false
+//   }
+// }
 
-const testUseGitHubAPI = async () => {
-  githubTesting.value = true
+// const testUseGitHubAPI = async () => {
+//   githubTesting.value = true
 
-  try {
-    const { loadCategoriesFromGitHub } = useGitHubAPI()
-    const result = await loadCategoriesFromGitHub()
-    githubResult.value = JSON.stringify(result, null, 2)
-  } catch (error) {
-    githubResult.value = `错误: ${error.message}`
-  } finally {
-    githubTesting.value = false
-  }
-}
+//   try {
+//     const { loadCategoriesFromGitHub } = useGitHubAPI()
+//     const result = await loadCategoriesFromGitHub()
+//     githubResult.value = JSON.stringify(result, null, 2)
+//   } catch (error) {
+//     githubResult.value = `错误: ${error.message}`
+//   } finally {
+//     githubTesting.value = false
+//   }
+// }
 </script>
 
 <style scoped>

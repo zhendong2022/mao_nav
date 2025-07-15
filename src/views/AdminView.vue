@@ -47,6 +47,7 @@
           <div class="loading-content">
             <div class="loading-spinner"></div>
             <p>正在加载数据...</p>
+            <button @click="skipLoading" class="skip-loading-btn">跳过加载</button>
           </div>
         </div>
 
@@ -138,6 +139,26 @@ const activeTab = ref('categories')
 const categories = ref([])
 const navTitle = ref('猫猫导航') // 保存网站标题
 
+// 紧急兜底：如果5秒后loading还是true，强制重置
+setTimeout(() => {
+  if (loading.value) {
+    console.warn('检测到loading状态异常，强制重置')
+    loading.value = false
+    // 确保至少有基本数据
+    if (categories.value.length === 0) {
+      categories.value = [
+        {
+          id: 'default',
+          name: '默认分类',
+          icon: '📁',
+          order: 0,
+          sites: []
+        }
+      ]
+    }
+  }
+}, 5000)
+
 // 自定义弹框状态
 const dialogVisible = ref(false)
 const dialogType = ref('success')
@@ -160,15 +181,28 @@ const handleLogin = async () => {
       isAuthenticated.value = true
       localStorage.setItem('admin_authenticated', 'true')
 
-      // 登录成功后加载数据，但不重复设置loading
-      loading.value = false
-      await loadCategories()
+      // 登录成功后，不立即加载数据，让用户进入管理界面
+      console.log('登录成功，准备进入管理界面')
+
+      // 延迟加载，避免阻塞登录流程
+      setTimeout(async () => {
+        try {
+          await loadCategories()
+        } catch (error) {
+          console.error('登录后数据加载失败:', error)
+          loading.value = false
+        }
+      }, 500)
     } else {
       throw new Error('密钥错误，请重新输入')
     }
   } catch (error) {
     loginError.value = error.message
-    loading.value = false
+  } finally {
+    // 确保登录流程的loading状态被重置
+    if (!isAuthenticated.value) {
+      loading.value = false
+    }
   }
 }
 
@@ -215,12 +249,24 @@ const debugLoadData = async () => {
 // 加载分类数据
 const loadCategories = async () => {
   loading.value = true
+
+  // 设置整体超时保护
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('数据加载超时')), 8000)
+  })
+
   try {
     console.log('开始从GitHub加载数据...')
-    const data = await loadCategoriesFromGitHub()
+
+    // 使用Promise.race来确保不会无限等待
+    const data = await Promise.race([
+      loadCategoriesFromGitHub(),
+      timeoutPromise
+    ])
+
     console.log('GitHub数据加载成功:', data)
     categories.value = data.categories || []
-    navTitle.value = data.title || '猫猫导航' // 保存标题
+    navTitle.value = data.title || '猫猫导航'
 
     // 显示加载成功提示
     showDialog(
@@ -244,10 +290,15 @@ const loadCategories = async () => {
     try {
       const { mockData } = await import('../mock/mock_data.js')
       categories.value = mockData.categories || []
-      navTitle.value = mockData.title || '猫猫导航' // 保存标题
+      navTitle.value = mockData.title || '猫猫导航'
       console.log('本地数据加载成功，分类数量:', categories.value.length)
     } catch (fallbackError) {
       console.error('加载本地数据也失败:', fallbackError)
+
+      // 最后兜底：使用空数组
+      categories.value = []
+      navTitle.value = '猫猫导航'
+
       showDialog(
         'error',
         '❌ 完全加载失败',
@@ -256,7 +307,9 @@ const loadCategories = async () => {
       )
     }
   } finally {
+    // 确保loading状态被重置
     loading.value = false
+    console.log('数据加载完成，loading状态重置')
   }
 }
 
@@ -277,6 +330,40 @@ const showDialog = (type, title, message, details = []) => {
 // 关闭弹框
 const closeDialog = () => {
   dialogVisible.value = false
+}
+
+// 跳过加载
+const skipLoading = async () => {
+  console.log('用户选择跳过加载')
+  loading.value = false
+
+  // 尝试加载本地数据
+  try {
+    const { mockData } = await import('../mock/mock_data.js')
+    categories.value = mockData.categories || []
+    navTitle.value = mockData.title || '猫猫导航'
+    console.log('跳过加载后，使用本地数据:', categories.value.length)
+  } catch (error) {
+    console.error('跳过加载时，本地数据加载失败:', error)
+    // 最基本的兜底数据
+    categories.value = [
+      {
+        id: 'default',
+        name: '默认分类',
+        icon: '📁',
+        order: 0,
+        sites: []
+      }
+    ]
+    navTitle.value = '猫猫导航'
+  }
+
+  showDialog(
+    'info',
+    '⏭️ 已跳过加载',
+    '已跳过GitHub数据加载，当前使用本地数据',
+    [`• 分类数量: ${categories.value.length}`, `• 可在系统设置中重新尝试连接GitHub`]
+  )
 }
 
 // 保存到GitHub
@@ -315,9 +402,25 @@ onMounted(() => {
   const savedAuth = localStorage.getItem('admin_authenticated')
   if (savedAuth === 'true') {
     isAuthenticated.value = true
-    // 延迟加载，确保组件完全挂载
-    setTimeout(() => {
-      loadCategories()
+    // 延迟加载，确保组件完全挂载，并且包装在try-catch中
+    setTimeout(async () => {
+      try {
+        await loadCategories()
+      } catch (error) {
+        console.error('初始化加载失败:', error)
+        // 确保loading状态被重置
+        loading.value = false
+        // 直接使用本地数据作为兜底
+        try {
+          const { mockData } = await import('../mock/mock_data.js')
+          categories.value = mockData.categories || []
+          navTitle.value = mockData.title || '猫猫导航'
+        } catch (localError) {
+          console.error('本地数据加载失败:', localError)
+          categories.value = []
+          navTitle.value = '猫猫导航'
+        }
+      }
     }, 100)
   }
 })
@@ -525,6 +628,23 @@ onMounted(() => {
   border-radius: 8px;
   padding: 30px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 跳过加载按钮样式 */
+.skip-loading-btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #f39c12;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.skip-loading-btn:hover {
+  background: #e67e22;
 }
 
 /* 响应式设计 */

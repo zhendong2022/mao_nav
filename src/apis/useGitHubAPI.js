@@ -86,6 +86,16 @@ export function useGitHubAPI() {
         throw new Error('网络请求失败，可能是CORS问题或网络连接问题')
       }
 
+      // 检查是否是认证相关错误
+      if (error.message.includes('401') || error.message.includes('403')) {
+        throw new Error('GitHub认证失败，请检查GITHUB_TOKEN是否正确配置')
+      }
+
+      // 检查是否是环境变量配置错误
+      if (error.message.includes('VITE_GITHUB')) {
+        throw new Error('环境变量配置错误：' + error.message)
+      }
+
       throw error
     }
   }
