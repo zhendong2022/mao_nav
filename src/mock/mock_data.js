@@ -54,7 +54,7 @@ export const mockData = {
           "name": "Midjourney",
           "url": "https://www.midjourney.com",
           "description": "AI图像生成工具",
-          "icon": "https://www.midjourney.com/apple-touch-icon.png"
+          "icon": "https://external-content.duckduckgo.com/ip3/www.midjourney.com.ico"
         },
         {
           "id": "copilot",
@@ -434,7 +434,7 @@ export const mockData = {
           "name": "Notion",
           "url": "https://www.notion.so",
           "description": "全能工作空间",
-          "icon": "https://www.notion.so/favicon.ico"
+          "icon": "https://external-content.duckduckgo.com/ip3/www.notion.so.ico"
         },
         {
           "id": "slack",
