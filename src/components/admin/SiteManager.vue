@@ -89,8 +89,8 @@
     </div>
 
     <!-- 添加/编辑站点弹窗 -->
-    <div v-if="showAddModal || editingSite" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
+    <div v-if="showAddModal || editingSite" class="modal-overlay">
+      <div class="modal-content">
         <div class="modal-header">
           <h3>{{ editingSite ? '编辑站点' : '添加站点' }}</h3>
           <button @click="closeModal" class="close-btn">✕</button>
@@ -279,6 +279,147 @@ const deleteSite = (site) => {
   }
 }
 
+// 通用图标测试函数
+const testImage = async (imageUrl) => {
+  console.log(`🔍 开始检测图标: ${imageUrl}`)
+
+  // 判断是否为同域名或用户直接输入的本站URL
+  const isSameDomain = imageUrl.startsWith(window.location.origin) ||
+                      imageUrl.startsWith('/') ||
+                      imageUrl.startsWith('./') ||
+                      !imageUrl.startsWith('http')
+
+  // 对于同域名的URL，可以使用fetch进行详细检测
+  if (isSameDomain) {
+    console.log(`📡 同域名资源，使用fetch检测: ${imageUrl}`)
+    try {
+      // 先检查文件大小，避免加载空的或无效的favicon
+      const response = await fetch(imageUrl, { method: 'HEAD' })
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: 无法访问图标`)
+      }
+
+      // 检查Content-Length，如果小于512bytes认为可能是空文件或无效图标
+      const contentLength = response.headers.get('content-length')
+      if (contentLength && parseInt(contentLength) < 512) {
+        throw new Error(`文件过小 (${contentLength} bytes)，可能是空的或无效图标`)
+      }
+
+      // 如果没有Content-Length，尝试实际下载并检查大小
+      if (!contentLength) {
+        const fullResponse = await fetch(imageUrl)
+        if (!fullResponse.ok) {
+          throw new Error(`HTTP ${fullResponse.status}: 下载失败`)
+        }
+
+        const arrayBuffer = await fullResponse.arrayBuffer()
+        if (arrayBuffer.byteLength < 512) {
+          throw new Error(`下载文件过小 (${arrayBuffer.byteLength} bytes)，可能是空的或无效图标`)
+        }
+      }
+
+      // 大小检查通过后，验证是否能作为图片正常加载
+      return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => {
+          console.log(`✅ 同域名图标检测成功`)
+          resolve(imageUrl)
+        }
+        img.onerror = () => reject(new Error('图标格式无效或无法显示'))
+        img.src = imageUrl
+      })
+    } catch (fetchError) {
+      console.log(`❌ 同域名fetch失败: ${fetchError.message}`)
+      throw fetchError
+    }
+  }
+
+  // 对于跨域URL（包括所有favicon服务），优先使用Image检测避免CORS问题
+  console.log(`📸 跨域资源，使用Image检测: ${imageUrl}`)
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      // 检查图片尺寸，过小可能是错误页面或无效图标
+      if (img.naturalWidth < 8 || img.naturalHeight < 8) {
+        console.log(`❌ 图片尺寸过小: ${img.naturalWidth}x${img.naturalHeight}`)
+        reject(new Error(`图片尺寸过小 (${img.naturalWidth}x${img.naturalHeight})，可能是无效图标`))
+        return
+      }
+      console.log(`✅ 跨域图标检测成功，尺寸: ${img.naturalWidth}x${img.naturalHeight}`)
+      resolve(imageUrl)
+    }
+    img.onerror = () => {
+      console.log(`❌ 图片加载失败: ${imageUrl}`)
+      reject(new Error('无法加载图标或图标不存在'))
+    }
+    // 对于跨域图片，不设置crossOrigin以避免额外的CORS检查
+    img.src = imageUrl
+  })
+}
+
+// 多个备用favicon服务尝试
+const tryFallbackServices = async (domain) => {
+  // 按优先级排序的favicon服务列表（优先国内外都稳定的服务）
+  const faviconServices = [
+    {
+      name: 'DuckDuckGo',
+      url: `https://external-content.duckduckgo.com/ip3/${domain}.ico`,
+      description: '隐私搜索引擎，全球稳定'
+    },
+    {
+      name: 'Favicone',
+      url: `https://favicone.com/${domain}?s=64`,
+      description: '新兴服务，支持尺寸调整'
+    },
+    {
+      name: 'AllesEDV',
+      url: `https://f1.allesedv.com/64/${domain}`,
+      description: '欧洲服务，支持多尺寸'
+    },
+    {
+      name: 'Google (备选)',
+      url: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+      description: '功能最全，但国内可能受限'
+    }
+  ]
+
+  let lastError = null
+
+  for (const service of faviconServices) {
+    try {
+      console.log(`🔍 尝试 ${service.name} 服务:`, service.url)
+
+      // 使用超时机制避免长时间等待
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('请求超时')), 8000)
+      })
+
+      await Promise.race([testImage(service.url), timeoutPromise])
+
+      formData.value.icon = service.url
+      iconError.value = false
+      console.log(`✅ 成功使用 ${service.name} 获取图标`)
+
+      // 仅在使用非首选服务时提示用户
+      if (service.name !== 'DuckDuckGo') {
+        console.log(`📝 已使用 ${service.name} 备用服务获取图标`)
+        alert(`已使用 ${service.name} 备用图标服务。\n\n${service.description}\n\n如果图标显示异常，建议手动输入有效的图标URL。`)
+      } else {
+        console.log(`🎯 成功使用首选的 ${service.name} 服务获取图标`)
+      }
+      return
+    } catch (error) {
+      console.log(`❌ ${service.name} 服务失败:`, error.message)
+      lastError = error
+      continue
+    }
+  }
+
+  // 所有服务都失败了
+  console.error('❌ 所有备用图标服务都失败了，最后的错误:', lastError?.message)
+  alert('❌ 无法从任何服务获取网站图标，请手动输入图标URL。\n\n💡 建议使用网站的 favicon.ico 或其他图标链接。\n\n🔍 您也可以尝试不同的域名格式，如：www.example.com 或 example.com')
+}
+
 // 自动检测图标
 const autoDetectIcon = async () => {
   if (!formData.value.url) {
@@ -293,24 +434,15 @@ const autoDetectIcon = async () => {
     // 首先尝试默认的 favicon.ico
     const faviconUrl = `${baseUrl}/favicon.ico`
 
-    const testImage = (imageUrl) => {
-      return new Promise((resolve, reject) => {
-        const img = new Image()
-        img.onload = () => resolve(imageUrl)
-        img.onerror = () => reject()
-        img.src = imageUrl
-      })
-    }
-
     try {
       // 尝试默认 favicon
       const iconUrl = await testImage(faviconUrl)
       formData.value.icon = iconUrl
       iconError.value = false
       return
-    } catch {
+    } catch (error) {
       // 默认 favicon 失败，尝试从 HTML 中提取
-      console.log('默认 favicon 不可用，尝试从 HTML 中提取...')
+      console.log('默认 favicon 不可用，尝试从 HTML 中提取...', error.message)
     }
 
     // 从 HTML 中提取图标信息
@@ -370,26 +502,19 @@ const autoDetectIcon = async () => {
           iconError.value = false
           console.log('成功从 HTML 中提取图标:', foundIcon)
           return
-        } catch {
-          console.log('提取的图标不可用:', foundIcon)
+        } catch (error) {
+          console.log('提取的图标不可用:', foundIcon, error.message)
         }
       }
 
-      // 如果都失败了，使用一个通用的图标服务
-      const fallbackIcon = `https://www.google.com/s2/favicons?domain=${url.host}&sz=64`
-      formData.value.icon = fallbackIcon
-      iconError.value = false
-      console.log('使用备用图标服务')
+      // 如果都失败了，尝试多个备用图标服务
+      await tryFallbackServices(url.host)
 
     } catch (fetchError) {
       console.log('获取 HTML 失败，可能是 CORS 限制:', fetchError.message)
 
-      // 如果因为 CORS 无法获取 HTML，使用 Google 的 favicon 服务作为备选
-      const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${url.host}&sz=64`
-      formData.value.icon = googleFaviconUrl
-      iconError.value = false
-
-      alert('由于跨域限制无法直接获取网站图标，已使用备用图标服务。如需获取准确图标，请手动输入图标URL。')
+      // 如果因为 CORS 无法获取 HTML，尝试多个备用图标服务
+      await tryFallbackServices(url.host)
     }
 
   } catch (error) {

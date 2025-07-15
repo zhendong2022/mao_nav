@@ -66,8 +66,8 @@
     </div>
 
     <!-- 添加/编辑分类弹窗 -->
-    <div v-if="showAddModal || editingCategory" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
+    <div v-if="showAddModal || editingCategory" class="modal-overlay">
+      <div class="modal-content">
         <div class="modal-header">
           <h3>{{ editingCategory ? '编辑分类' : '添加分类' }}</h3>
           <button @click="closeModal" class="close-btn">✕</button>
