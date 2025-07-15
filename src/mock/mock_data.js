@@ -262,7 +262,7 @@ export const mockData = {
           "name": "币安",
           "url": "https://www.binance.com",
           "description": "全球领先的加密货币交易平台",
-          "icon": "https://www.binance.com/favicon.ico"
+          "icon": "https://bin.bnbstatic.com/static/images/bnb-for/brand.png"
         },
         {
           "id": "okx",
@@ -459,5 +459,6 @@ export const mockData = {
         }
       ]
     }
-  ]
+  ],
+  "title": "猫猫导航"
 }
