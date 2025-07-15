@@ -154,7 +154,7 @@ export const mockData = {
           "name": "Postman",
           "url": "https://www.postman.com",
           "description": "API测试工具",
-          "icon": "https://www.postman.com/favicon.ico"
+          "icon": "https://www.postman.com/_mk-www-v8.279.0/favicon-32x32.png?v=385b24b9d8db6d360e97f2fe356659b5"
         },
         {
           "id": "android-studio",
