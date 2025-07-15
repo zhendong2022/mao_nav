@@ -11,7 +11,7 @@ export const mockData = {
             name: "Linux.do",
             url: "https://linux.do",
             description: "Linux技术社区，Peace and Love",
-            icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAABOxJREFUWEfNV0tslFUU/s7/nmmHmWE6NRUqKZXER9OIuNFA3Ei6w6CUWiPGjRiaSLtoWZi4MnFBu2gxgYgLjRgqtNHIrsGFBqIbAdPUR4LQYIXGTseZ6WPmfx+9f+dvphRIDWPxzm7+e8/3nXPPOfc7hLssZiYAKhHZ4RZm3gtgD4Am27Z3EpEsvjGzp2naRQCTAM4R0ZcVZzQADhHxnaAEyKrFzALYKRtPADjuOE7n2NgYLly4iPHxcVy6dEVAl88SduzYjtbWVuzatRNtbW1QVXUYQBcR5ct2lm1WAq4iwMxa6DUzD7qu2z04OIRjxz7A1NQNF4BfUxOTa2pqZKKl48yMxcVFb3Fx3gMgNTZuUQ4ffhs9Pd1QFGXoHxI95X3LtkMSKwgws05EFjNvBDAxMjLacOhQF7LZjF1XV6/GYjESoJ7nwff9FZGTJAmyLAdk5ufneXZ2xkml0tqJE8fR3r5vGkALEf0VYqwiEHpeLBY3RyKRqb6+IxgY6DfT6YeMWCwGx3EC42tZgqSqqoIIMpk/zd7ePqO//yhKpVJjNBr9ozLKQQTCOy97nu3oeAVnz56xmpqa9Tt5uxYSYk8YlcnJa9b+/R36mTOfi79T5UgEOUEi28MMZeZbfX1HGgYG+q3m5m26ZVlrxbrnPl3Xce3aVau3t0/v7z86TUQPlx0nQSBIDJFwo6Oj3e3t7WZz8zbDtperryokNE0TJMyRkVFj376Xg8QMsMNSy2Qyufr6ehE4RCKRVUl2vyzEdZRKJVFEmJmZQTqdTooSDQjYtn365s2bnRMTE3Y8Htc8z0e5wu4Xd/m8yF9ZllAoFOyWlhZt06ZNw5qmvRoQyOVybBgGDMMQaX7H5lQ1JgCbpkmmaSKZTBLlcrm9RPQFM7ue5ylVBLqrKVmWXSJSmPklKhQKHzPzG+ImAIi+vR4rwCKiTyifz38D4HkAoo0Gj8s6rBDrW0FA9Pf1Ar7dN08QWFt//Y/C8r8g8MCv4MEm4QMvw7ARAeyC16cRgWQXKDcikdz5fI4hGWBlfVoxuSbBN5FIJJeenPy8e5rMG53y3GWb1aQGXim3qlaBJIGcvO1t2K6xsWU4EVPKjxFzgnKZXHysfukpkqoGudKQ6H8ACm0z4GRaPEV5+olZe5LInmUejPz2WXf0+wMmElEDfnUFCSQNyBfN4rOnjNKjrw3VEfUI7BWSLOvxrdrLbzVov560EI/q8KsjySDpQKFo2Y8d1Bee/nA6JVdIsrIiCgRiocAb3SiyG77bDeX3ry3EI7ooDrCI3b+VCQyIwYkUoFCy3Ede0OeeOw+liFQ8HsjzJVEaXlKoDbNF3gwVU7U/HoT2y0cmamFAiQK+GJTWmpwSIKmAWwQWYNqPv2ksPHUScNCYitJqWR6SuMqsbyOygkjUYsK4fqohOv46YMJGBCpkgwKtJiJye6WQtOSx0F6eySjBgQGt2PopzK0HppUFtAjPQ4wQ856jWZZ5UFrwuo3J92Bcfx9YdFwQfEEl+FUuDx4ceGBIqFEVc+s7MJvehV8rD6XWOppVXMfyIJljTvjAcWnB7VQzX0HNnoc8dwly4YeV+PFn4G3YASe1G076Rfi1yrAEdIlSq8yz2wv8rpklBpafAVWUaHholnkv+dgjWWiC5+6sEDIeZOWir2OSJZyrqxjPRak9cY/x/G9pa4SNlgBs7AAAAABJRU5ErkJggg=="
+            icon: "https://linux.do/uploads/default/optimized/3X/7/d/7de31932a4fd533496cfe35979a4d9d995bb5c63_2_180x180.png"
           },
           {
             id: "curlconverter",
@@ -73,10 +73,60 @@ export const mockData = {
         ]
       },
       {
+        id: "cloud",
+        name: "云服务",
+        icon: "☁️",
+        order: 2,
+        sites: [
+          {
+            id: "cloudflare",
+            name: "Cloudflare",
+            url: "https://www.cloudflare.com",
+            description: "全球CDN和网络安全服务",
+            icon: "https://www.cloudflare.com/favicon.ico"
+          },
+          {
+            id: "vercel",
+            name: "Vercel",
+            url: "https://vercel.com",
+            description: "前端部署平台",
+            icon: "https://vercel.com/favicon.ico"
+          },
+          {
+            id: "aws",
+            name: "AWS",
+            url: "https://aws.amazon.com",
+            description: "亚马逊云服务",
+            icon: "https://aws.amazon.com/favicon.ico"
+          },
+          {
+            id: "aliyun",
+            name: "阿里云",
+            url: "https://www.aliyun.com",
+            description: "阿里巴巴云计算",
+            icon: "https://www.aliyun.com/favicon.ico"
+          },
+          {
+            id: "tencent-cloud",
+            name: "腾讯云",
+            url: "https://cloud.tencent.com",
+            description: "腾讯云计算服务",
+            icon: "https://cloud.tencent.com/favicon.ico"
+          },
+          {
+            id: "huawei-cloud",
+            name: "华为云",
+            url: "https://www.huaweicloud.com",
+            description: "华为云计算服务",
+            icon: "https://www.huaweicloud.com/favicon.ico"
+          }
+        ]
+      },
+      {
         id: "dev-tools",
         name: "开发工具",
         icon: "🛠️",
-        order: 2,
+        order: 3,
         sites: [
           {
             id: "github",
@@ -93,13 +143,6 @@ export const mockData = {
             icon: "https://code.visualstudio.com/favicon.ico"
           },
           {
-            id: "gitee",
-            name: "Gitee",
-            url: "https://gitee.com",
-            description: "国内代码托管平台",
-            icon: "https://gitee.com/favicon.ico"
-          },
-          {
             id: "webstorm",
             name: "WebStorm",
             url: "https://www.jetbrains.com/webstorm/",
@@ -112,6 +155,63 @@ export const mockData = {
             url: "https://www.postman.com",
             description: "API测试工具",
             icon: "https://www.postman.com/favicon.ico"
+          },
+          {
+            id: "android-studio",
+            name: "Android Studio",
+            url: "https://developer.android.com/studio",
+            description: "Android官方开发工具",
+            icon: "https://developer.android.com/images/brand/Android_Robot.png"
+          },
+          {
+            id: "oracle-java",
+            name: "Oracle Java",
+            url: "https://www.oracle.com/java/technologies/downloads/",
+            description: "Oracle官方Java下载",
+            icon: "https://www.oracle.com/favicon.ico"
+          }
+        ]
+      },
+      {
+        id: "community",
+        name: "社区论坛",
+        icon: "👥",
+        order: 6,
+        sites: [
+          {
+            id: "stackoverflow",
+            name: "Stack Overflow",
+            url: "https://stackoverflow.com",
+            description: "程序员问答社区",
+            icon: "https://stackoverflow.com/favicon.ico"
+          },
+          {
+            id: "linuxdo",
+            name: "Linux.do",
+            url: "https://linux.do",
+            description: "Linux与开源技术社区",
+            icon: "https://linux.do/uploads/default/optimized/3X/7/d/7de31932a4fd533496cfe35979a4d9d995bb5c63_2_180x180.png"
+          },
+          {
+            id: "nodeseek",
+            name: "NodeSeek",
+            url: "https://www.nodeseek.com",
+            description: "极客技术社区",
+            icon: "https://www.nodeseek.com/static/image/favicon/favicon-32x32.png"
+          },
+          {
+            id: "v2ex",
+            name: "V2EX",
+            url: "https://www.v2ex.com",
+            description: "创意工作者社区",
+            icon: "https://www.v2ex.com/favicon.ico"
+          },
+          {
+            id: "52pojie",
+            name: "吾爱破解",
+            url: "https://www.52pojie.cn/",
+            description: "软件安全与破解技术论坛",
+            icon: "https://www.52pojie.cn/favicon.ico"
           }
         ]
       },
@@ -119,7 +219,7 @@ export const mockData = {
         id: "design",
         name: "设计工具",
         icon: "🎨",
-        order: 3,
+        order: 4,
         sites: [
           {
             id: "figma",
@@ -152,10 +252,74 @@ export const mockData = {
         ]
       },
       {
+        id: "finance",
+        name: "财经投资",
+        icon: "💰",
+        order: 5,
+        sites: [
+          {
+            id: "binance",
+            name: "币安",
+            url: "https://www.binance.com",
+            description: "全球领先的加密货币交易平台",
+            icon: "https://www.binance.com/favicon.ico"
+          },
+          {
+            id: "okx",
+            name: "OKX",
+            url: "https://www.okx.com",
+            description: "数字资产交易服务平台",
+            icon: "https://www.okx.com/favicon.ico"
+          },
+          {
+            id: "bitget",
+            name: "Bitget",
+            url: "https://www.bitget.com",
+            description: "全球化数字资产交易服务商",
+            icon: "https://www.bitget.com/favicon.ico"
+          },
+          {
+            id: "tonghuashun",
+            name: "同花顺",
+            url: "https://www.10jqka.com.cn",
+            description: "专业股票软件及金融信息服务",
+            icon: "https://www.10jqka.com.cn/favicon.ico"
+          },
+          {
+            id: "tradingview",
+            name: "TradingView",
+            url: "https://cn.tradingview.com",
+            description: "专业金融图表和交易平台",
+            icon: "https://cn.tradingview.com/favicon.ico"
+          },
+          {
+            id: "xueqiu",
+            name: "雪球",
+            url: "https://xueqiu.com",
+            description: "聪明的投资者都在这里",
+            icon: "https://xueqiu.com/favicon.ico"
+          },
+          {
+            id: "coinbase",
+            name: "Coinbase",
+            url: "https://www.coinbase.com",
+            description: "美国合规加密货币交易平台",
+            icon: "https://www.coinbase.com/favicon.ico"
+          },
+          {
+            id: "futu",
+            name: "富途牛牛",
+            url: "https://www.futunn.com",
+            description: "港美股交易软件",
+            icon: "https://www.futunn.com/favicon.ico"
+          }
+        ]
+      },
+      {
         id: "learning",
         name: "学习资源",
         icon: "📚",
-        order: 4,
+        order: 6,
         sites: [
           {
             id: "mdn",
@@ -187,47 +351,12 @@ export const mockData = {
           }
         ]
       },
-      {
-        id: "community",
-        name: "技术社区",
-        icon: "👥",
-        order: 5,
-        sites: [
-          {
-            id: "stackoverflow",
-            name: "Stack Overflow",
-            url: "https://stackoverflow.com",
-            description: "程序员问答社区",
-            icon: "https://stackoverflow.com/favicon.ico"
-          },
-          {
-            id: "juejin",
-            name: "掘金",
-            url: "https://juejin.cn",
-            description: "技术分享社区",
-            icon: "https://juejin.cn/favicon.ico"
-          },
-          {
-            id: "csdn",
-            name: "CSDN",
-            url: "https://www.csdn.net",
-            description: "技术博客平台",
-            icon: "https://www.csdn.net/favicon.ico"
-          },
-          {
-            id: "segmentfault",
-            name: "SegmentFault",
-            url: "https://segmentfault.com",
-            description: "技术问答社区",
-            icon: "https://segmentfault.com/favicon.ico"
-          }
-        ]
-      },
+
       {
         id: "tools",
         name: "在线工具",
         icon: "⚙️",
-        order: 6,
+        order: 7,
         sites: [
           {
             id: "json-formatter",
@@ -263,7 +392,7 @@ export const mockData = {
         id: "entertainment",
         name: "娱乐休闲",
         icon: "🎮",
-        order: 7,
+        order: 8,
         sites: [
           {
             id: "bilibili",
@@ -299,7 +428,7 @@ export const mockData = {
         id: "office",
         name: "办公协作",
         icon: "💼",
-        order: 8,
+        order: 9,
         sites: [
           {
             id: "notion",
@@ -328,42 +457,6 @@ export const mockData = {
             url: "https://www.feishu.cn",
             description: "企业协作平台",
             icon: "https://www.feishu.cn/favicon.ico"
-          }
-        ]
-      },
-      {
-        id: "cloud",
-        name: "云服务",
-        icon: "☁️",
-        order: 9,
-        sites: [
-          {
-            id: "vercel",
-            name: "Vercel",
-            url: "https://vercel.com",
-            description: "前端部署平台",
-            icon: "https://vercel.com/favicon.ico"
-          },
-          {
-            id: "netlify",
-            name: "Netlify",
-            url: "https://www.netlify.com",
-            description: "静态网站托管",
-            icon: "https://www.netlify.com/favicon.ico"
-          },
-          {
-            id: "aws",
-            name: "AWS",
-            url: "https://aws.amazon.com",
-            description: "亚马逊云服务",
-            icon: "https://aws.amazon.com/favicon.ico"
-          },
-          {
-            id: "aliyun",
-            name: "阿里云",
-            url: "https://www.aliyun.com",
-            description: "阿里巴巴云计算",
-            icon: "https://www.aliyun.com/favicon.ico"
           }
         ]
       }

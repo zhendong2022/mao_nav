@@ -145,14 +145,18 @@ const searchEngines = {
 const scrollToCategory = (categoryId) => {
   const element = document.getElementById(`category-${categoryId}`)
   const container = document.querySelector('.content-area')
+  const searchHeader = document.querySelector('.search-header')
 
   if (element && container) {
     // 计算元素相对于容器的偏移位置
     const elementOffsetTop = element.offsetTop
 
-    // 滚动到目标位置（减去一些偏移量避免被搜索框遮挡）
+    // 动态获取搜索框高度，加上一些额外间距
+    const searchHeaderHeight = searchHeader ? searchHeader.offsetHeight + 20 : 100
+
+    // 滚动到目标位置（减去搜索框高度避免被遮挡）
     container.scrollTo({
-      top: elementOffsetTop - 30,
+      top: elementOffsetTop - searchHeaderHeight,
       behavior: 'smooth'
     })
   }
@@ -345,6 +349,7 @@ onMounted(() => {
 .content-area {
   flex: 1;
   padding: 30px;
+  padding-bottom: 400px;
   overflow-y: auto;
 }
 
@@ -411,7 +416,7 @@ onMounted(() => {
 
 .sites-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
 
