@@ -10,12 +10,13 @@ const router = createRouter({
       component: NavHomeView,
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../views/AdminView.vue'),
+      meta: {
+        title: '管理后台 - 猫猫导航',
+        requiresAuth: true
+      }
     },
     {
       path: '/test',
@@ -23,6 +24,18 @@ const router = createRouter({
       component: () => import('../views/HomeView.vue'),
     },
   ],
+})
+
+// 路由前置守卫
+router.beforeEach((to, from, next) => {
+  // 设置页面标题
+  if (to.meta?.title) {
+    document.title = to.meta.title
+  } else {
+    document.title = '猫猫导航'
+  }
+
+  next()
 })
 
 export default router

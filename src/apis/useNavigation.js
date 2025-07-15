@@ -24,13 +24,6 @@ export function useNavigation() {
       // 动态设置页面标题
       document.title = title.value
 
-      // 🚀 可选：如果你想使用 Cloudflare R2 存储数据，可以替换为：
-      // const response = await fetch('https://your-r2-bucket.r2.dev/categories.json')
-      // if (!response.ok) throw new Error('Failed to fetch from R2')
-      // const data = await response.json()
-      // categories.value = data.categories
-      // title.value = data.title
-      // document.title = title.value
 
     } catch (err) {
       error.value = err.message
