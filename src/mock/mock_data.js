@@ -261,7 +261,7 @@ export const mockData = {
           "id": "binance",
           "name": "币安",
           "url": "https://www.binance.com",
-          "description": "全球领先的加密货币交易平台",
+          "description": "加密货币交易平台",
           "icon": "https://bin.bnbstatic.com/static/images/bnb-for/brand.png"
         },
         {
