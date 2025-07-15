@@ -6,7 +6,7 @@
           <div class="dialog-icon">
             <svg v-if="type === 'success'" class="icon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
-              <path d="L9 11l3 3L22 4"></path>
+              <path d="M9 11l3 3L22 4"></path>
             </svg>
             <svg v-else-if="type === 'error'" class="icon-error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
