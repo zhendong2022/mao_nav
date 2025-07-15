@@ -23,6 +23,22 @@
           </li>
         </ul>
       </nav>
+
+      <!-- 左侧边栏底部信息 -->
+      <div class="sidebar-footer">
+        <a
+          href="https://github.com/maodeyu180/mao_nav"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="github-link"
+          title="查看源代码"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+          <span>开源项目,Star</span>
+        </a>
+      </div>
     </aside>
 
     <!-- 右侧主内容区 -->
@@ -124,6 +140,35 @@
               </a>
             </div>
           </section>
+
+          <!-- 页面底部信息 -->
+          <footer class="page-footer" hidden="true">
+            <div class="footer-content">
+              <div class="footer-info">
+                <h3>{{ title || '猫猫导航' }}</h3>
+                <p>一个简洁、美观的导航网站，收录优质网站资源</p>
+              </div>
+
+              <div class="footer-links">
+                <a
+                  href="https://github.com/maodeyu180/mao_nav"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="footer-link"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                  </svg>
+                  开源项目
+                </a>
+              </div>
+            </div>
+
+            <div class="footer-bottom">
+              <p>&copy; {{ new Date().getFullYear() }} 猫猫导航 - 由 <a href="https://github.com/maodeyu180" target="_blank" rel="noopener noreferrer">maodeyu180</a> 用 ❤️ 制作</p>
+              <p class="footer-tech">基于 Vue.js 构建 | <a href="https://github.com/maodeyu180/mao_nav" target="_blank" rel="noopener noreferrer">查看源代码</a></p>
+            </div>
+          </footer>
         </div>
       </div>
     </main>
@@ -171,24 +216,58 @@ const searchEngines = {
   }
 }
 
+// 自定义固定时间滚动函数
+const smoothScrollTo = (container, targetTop, duration = 600) => {
+  const startTop = container.scrollTop
+  const distance = targetTop - startTop
+  let startTime = null
+
+  const animateScroll = (currentTime) => {
+    if (startTime === null) startTime = currentTime
+    const timeElapsed = currentTime - startTime
+    const progress = Math.min(timeElapsed / duration, 1)
+
+    // 使用缓动函数 (easeInOutCubic)
+    const ease = progress < 0.5
+      ? 4 * progress * progress * progress
+      : 1 - Math.pow(-2 * progress + 2, 3) / 2
+
+    container.scrollTop = startTop + distance * ease
+
+    if (progress < 1) {
+      requestAnimationFrame(animateScroll)
+    }
+  }
+
+  requestAnimationFrame(animateScroll)
+}
+
 // 滚动到指定分类
 const scrollToCategory = (categoryId) => {
   const element = document.getElementById(`category-${categoryId}`)
   const container = document.querySelector('.content-area')
-  const searchHeader = document.querySelector('.search-header')
 
   if (element && container) {
-    // 计算元素相对于容器的偏移位置
-    const elementOffsetTop = element.offsetTop
+    // 检查是否为移动端
+    const isMobile = window.innerWidth <= 768
 
-    // 动态获取搜索框高度，加上一些额外间距
-    const searchHeaderHeight = searchHeader ? searchHeader.offsetHeight + 20 : 100
+    let targetTop = 0
 
-    // 滚动到目标位置（减去搜索框高度避免被遮挡）
-    container.scrollTo({
-      top: elementOffsetTop - searchHeaderHeight,
-      behavior: 'smooth'
-    })
+    if (isMobile) {
+      // 移动端：在 content-area 容器内滚动
+      const elementOffsetTop = element.offsetTop
+      const searchHeaderHeight = 80 // 固定高度，因为搜索框是fixed定位
+      targetTop = elementOffsetTop - searchHeaderHeight
+    } else {
+      // 桌面端：在容器内滚动
+      const searchHeader = document.querySelector('.search-header')
+      const elementOffsetTop = element.offsetTop
+      const searchHeaderHeight = searchHeader ? searchHeader.offsetHeight + 20 : 100
+      targetTop = elementOffsetTop - searchHeaderHeight
+    }
+
+    // 使用固定时间滚动（600毫秒）
+    smoothScrollTo(container, Math.max(0, targetTop), 600)
   }
 }
 
@@ -273,7 +352,7 @@ onMounted(() => {
 
 .category-nav {
   padding: 20px 0;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 180px); /* 为底部留出空间 */
   overflow-y: auto;
 }
 
@@ -318,6 +397,39 @@ onMounted(() => {
   font-weight: 500;
 }
 
+/* 左侧边栏底部 */
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto;
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  color: #bdc3c7;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.github-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.github-link svg {
+  margin-right: 8px;
+  transition: transform 0.3s ease;
+}
+
+.github-link:hover svg {
+  transform: scale(1.1);
+}
+
 /* 右侧主内容区样式 */
 .main-content {
   flex: 1;
@@ -348,6 +460,13 @@ onMounted(() => {
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   flex: 1;
+}
+
+@media (max-width: 768px) {
+  .search-container {
+    margin: 0;
+    max-width: none;
+  }
 }
 
 .search-engine-selector {
@@ -669,10 +788,108 @@ onMounted(() => {
   line-height: 1.4;
 }
 
+/* 页面底部 */
+.page-footer {
+  margin-top: 60px;
+  padding: 40px 0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border-top: 3px solid #3498db;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+  gap: 30px;
+}
+
+.footer-info h3 {
+  color: #2c3e50;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.footer-info p {
+  color: #7f8c8d;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.footer-links {
+  display: flex;
+  gap: 15px;
+}
+
+.footer-link {
+  display: flex;
+  align-items: center;
+  color: #3498db;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: white;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.footer-link:hover {
+  background: #3498db;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.footer-link svg {
+  margin-right: 6px;
+  transition: transform 0.3s ease;
+}
+
+.footer-link:hover svg {
+  transform: scale(1.1);
+}
+
+.footer-bottom {
+  border-top: 1px solid #e9ecef;
+  padding-top: 20px;
+  text-align: center;
+}
+
+.footer-bottom p {
+  color: #7f8c8d;
+  font-size: 13px;
+  margin: 5px 0;
+  line-height: 1.4;
+}
+
+.footer-bottom a {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.footer-bottom a:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}
+
+.footer-tech {
+  font-size: 12px !important;
+  opacity: 0.8;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .nav-home {
     flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .sidebar {
@@ -680,12 +897,32 @@ onMounted(() => {
   }
 
   .main-content {
+    flex: 1;
     height: 100vh;
     margin-left: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .search-header {
     padding: 15px 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 500;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .content-area {
+    flex: 1;
+    padding: 20px 15px;
+    padding-top: 100px; /* 为固定的搜索框留出空间 */
+    padding-bottom: 100px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
   }
 
   .mobile-menu-btn {
@@ -716,9 +953,28 @@ onMounted(() => {
     font-size: 22px;
   }
 
-  .content-area {
-    padding: 20px 15px;
-    padding-bottom: 100px;
+  /* 移动端页面底部 */
+  .page-footer {
+    margin-top: 40px;
+    padding: 30px 20px;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .footer-links {
+    justify-content: center;
+  }
+
+  .footer-bottom {
+    padding-top: 15px;
+  }
+
+  .footer-bottom p {
+    font-size: 12px;
   }
 }
 </style>
