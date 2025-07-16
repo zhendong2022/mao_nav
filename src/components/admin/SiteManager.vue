@@ -369,67 +369,50 @@ const testImage = async (imageUrl) => {
   })
 }
 
-// 多个备用favicon服务尝试
+// 获取favicon图标
 const tryFallbackServices = async (domain) => {
-  // 按优先级排序的favicon服务列表（优先国内外都稳定的服务）
-  const faviconServices = [
-    {
-      name: 'DuckDuckGo',
-      url: `https://external-content.duckduckgo.com/ip3/${domain}.ico`,
-      description: '隐私搜索引擎，全球稳定'
-    },
-    {
-      name: 'Favicone',
-      url: `https://favicone.com/${domain}?s=64`,
-      description: '新兴服务，支持尺寸调整'
-    },
-    {
-      name: 'AllesEDV',
-      url: `https://f1.allesedv.com/64/${domain}`,
-      description: '欧洲服务，支持多尺寸'
-    },
-    {
-      name: 'Google (备选)',
-      url: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
-      description: '功能最全，但国内可能受限'
-    }
-  ]
+  // 首先尝试icon服务
+  const iconServiceUrl = `https://icon.maodeyu.fun/favicon/${domain}`
 
-  let lastError = null
+  try {
+    console.log(`🔍 尝试图标服务:`, iconServiceUrl)
 
-  for (const service of faviconServices) {
-    try {
-      console.log(`🔍 尝试 ${service.name} 服务:`, service.url)
+    // 使用超时机制避免长时间等待
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('请求超时')), 8000)
+    })
 
-      // 使用超时机制避免长时间等待
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('请求超时')), 8000)
-      })
+    await Promise.race([testImage(iconServiceUrl), timeoutPromise])
 
-      await Promise.race([testImage(service.url), timeoutPromise])
-
-      formData.value.icon = service.url
-      iconError.value = false
-      console.log(`✅ 成功使用 ${service.name} 获取图标`)
-
-      // 仅在使用非首选服务时提示用户
-      if (service.name !== 'DuckDuckGo') {
-        console.log(`📝 已使用 ${service.name} 备用服务获取图标`)
-        alert(`已使用 ${service.name} 备用图标服务。\n\n${service.description}\n\n如果图标显示异常，建议手动输入有效的图标URL。`)
-      } else {
-        console.log(`🎯 成功使用首选的 ${service.name} 服务获取图标`)
-      }
-      return
-    } catch (error) {
-      console.log(`❌ ${service.name} 服务失败:`, error.message)
-      lastError = error
-      continue
-    }
+    formData.value.icon = iconServiceUrl
+    iconError.value = false
+    console.log(`✅ 成功获取图标`)
+    return
+  } catch (error) {
+    console.log(`❌ 图标服务失败:`, error.message)
   }
 
-  // 所有服务都失败了
-  console.error('❌ 所有备用图标服务都失败了，最后的错误:', lastError?.message)
-  alert('❌ 无法从任何服务获取网站图标，请手动输入图标URL。\n\n💡 建议使用网站的 favicon.ico 或其他图标链接。\n\n🔍 您也可以尝试不同的域名格式，如：www.example.com 或 example.com')
+  // 回退到标准favicon.ico路径
+  const fallbackUrl = `https://${domain}/favicon.ico`
+
+  try {
+    console.log(`🔍 尝试标准路径:`, fallbackUrl)
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('请求超时')), 8000)
+    })
+
+    await Promise.race([testImage(fallbackUrl), timeoutPromise])
+
+    formData.value.icon = fallbackUrl
+    iconError.value = false
+    console.log(`✅ 使用标准favicon.ico路径成功`)
+    return
+  } catch (error) {
+    console.log(`❌ 标准路径也失败:`, error.message)
+    console.error('❌ 无法获取网站图标')
+    alert('❌ 无法获取网站图标，请手动输入图标URL。\n\n💡 建议使用网站的 favicon.ico 或其他图标链接。')
+  }
 }
 
 // 自动检测图标
