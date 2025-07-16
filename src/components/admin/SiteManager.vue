@@ -176,6 +176,10 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
+  initialSelectedCategoryId: {
+    type: String,
+    default: ''
+  },
   loading: {
     type: Boolean,
     default: false
@@ -210,6 +214,14 @@ const formData = ref({
 watch(() => props.categories, (newCategories) => {
   localCategories.value = JSON.parse(JSON.stringify(newCategories))
 }, { immediate: true, deep: true })
+
+// 监听选中分类变化
+watch(() => props.initialSelectedCategoryId, (newCategoryId) => {
+  if (newCategoryId) {
+    selectedCategoryId.value = newCategoryId
+    currentPage.value = 1 // 重置到第一页
+  }
+}, { immediate: true })
 
 // 手动同步到父组件的函数，避免无限循环
 const syncToParent = () => {
@@ -450,16 +462,24 @@ const saveSite = () => {
 
   if (editingSite.value) {
     // 更新现有站点
-    const siteIndex = category.sites.findIndex(s => s.id === editingSite.value.id)
-    if (siteIndex !== -1) {
-      category.sites[siteIndex] = {
-        id: editingSite.value.id,
-        name: formData.value.name,
-        url: formData.value.url,
-        description: formData.value.description,
-        icon: formData.value.icon
-      }
+    // 首先从原分类中移除站点
+    const originalCategory = localCategories.value.find(cat =>
+      cat.sites && cat.sites.some(s => s.id === editingSite.value.id)
+    )
+
+    if (originalCategory && originalCategory.sites) {
+      originalCategory.sites = originalCategory.sites.filter(s => s.id !== editingSite.value.id)
     }
+
+    // 然后在新分类中添加更新后的站点
+    const updatedSite = {
+      id: editingSite.value.id,
+      name: formData.value.name,
+      url: formData.value.url,
+      description: formData.value.description,
+      icon: formData.value.icon
+    }
+    category.sites.push(updatedSite)
   } else {
     // 添加新站点
     const newSite = {
