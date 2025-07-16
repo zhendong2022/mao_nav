@@ -26,6 +26,13 @@ export const mockData = {
           "url": "https://github.com",
           "description": "代码托管平台",
           "icon": "https://external-content.duckduckgo.com/ip3/github.com.ico"
+        },
+        {
+          "id": "site-1752649007053",
+          "name": "BeJson",
+          "url": "https://www.bejson.com/",
+          "description": "工具大全",
+          "icon": "https://external-content.duckduckgo.com/ip3/www.bejson.com.ico"
         }
       ]
     },
