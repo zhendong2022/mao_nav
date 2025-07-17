@@ -4,7 +4,7 @@
     <aside class="sidebar">
       <!-- Logo区域 -->
       <div class="logo-section">
-        <img src="/logo.png" alt="logo" class="logo" />
+        <img src="@/assets/logo.png" alt="logo" class="logo" />
         <h1 class="site-title">{{ title || '猫猫导航' }}</h1>
       </div>
 
@@ -189,7 +189,7 @@ const { categories, title, loading, error, fetchCategories } = useNavigation()
 
 // 响应式数据
 const searchQuery = ref('') // 搜索查询
-const selectedEngine = ref('duckduckgo') // 选中的搜索引擎
+const selectedEngine = ref('bing') // 选中的搜索引擎
 const showMobileMenu = ref(false) // 移动端菜单显示状态
 
 // 搜索引擎配置
@@ -207,12 +207,12 @@ const searchEngines = {
   bing: {
     url: 'https://www.bing.com/search?q=',
     icon: bingLogo,
-    placeholder: 'Bing 搜索'
+    placeholder: 'Bing (点logo切换搜索引擎)'
   },
   duckduckgo: {
     url: 'https://duckduckgo.com/?q=',
     icon: duckLogo,
-    placeholder: 'DuckDuckGo 搜索(点logo切换)'
+    placeholder: 'DuckDuckGo 搜索'
   }
 }
 
