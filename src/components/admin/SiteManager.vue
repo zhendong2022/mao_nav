@@ -12,7 +12,7 @@
         <button @click="showAddModal = true" class="add-btn">
           ➕ 添加站点
         </button>
-        <button @click="$emit('save')" :disabled="loading" class="save-btn">
+        <button @click="handleSave" :disabled="loading" class="save-btn">
           {{ loading ? '保存中...' : '💾 保存到GitHub' }}
         </button>
       </div>
@@ -43,7 +43,7 @@
       >
         <div class="site-info">
           <div class="site-icon">
-            <img :src="site.icon" :alt="site.name" @error="handleImageError">
+            <img :src="getIconDisplayUrl(site.icon)" :alt="site.name" @error="handleImageError">
           </div>
           <div class="site-details">
             <h3>{{ site.name }}</h3>
@@ -152,7 +152,7 @@
               </button>
             </div>
             <div class="icon-preview" v-if="formData.icon">
-              <img :src="formData.icon" alt="图标预览" @error="iconError = true">
+              <img :src="getIconDisplayUrl(formData.icon)" alt="图标预览" @error="iconError = true">
             </div>
           </div>
 
@@ -170,6 +170,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useGitHubAPI } from '../../apis/useGitHubAPI.js'
 
 const props = defineProps({
   categories: {
@@ -186,10 +187,19 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update', 'save'])
+const emit = defineEmits(['update', 'save', 'upload-icons'])
+
+// GitHub API
+const { uploadBinaryFile } = useGitHubAPI()
 
 // 本地分类数据
 const localCategories = ref([])
+
+// 图标数据缓存 - 用于存储待上传的图标
+const pendingIcons = ref(new Map())
+
+// 图标预览缓存 - 用于在编辑期间显示图标
+const iconPreviews = ref(new Map())
 
 // 分页和筛选
 const selectedCategoryId = ref('')
@@ -265,6 +275,19 @@ const paginatedSites = computed(() => {
 const getCategoryName = (categoryId) => {
   const category = localCategories.value.find(cat => cat.id === categoryId)
   return category ? `${category.icon} ${category.name}` : '未分类'
+}
+
+// 获取图标显示URL - 优先使用预览缓存
+const getIconDisplayUrl = (iconPath) => {
+  if (!iconPath) return ''
+
+  // 如果有预览缓存，使用预览URL
+  if (iconPreviews.value.has(iconPath)) {
+    return iconPreviews.value.get(iconPath)
+  }
+
+  // 否则使用原始路径
+  return iconPath
 }
 
 // 编辑站点
@@ -369,6 +392,111 @@ const testImage = async (imageUrl) => {
   })
 }
 
+// 下载图标并缓存
+const downloadAndCacheIcon = async (iconUrl, domain) => {
+  try {
+    console.log(`📥 开始下载图标: ${iconUrl}`)
+
+    // 使用fetch下载图标
+    const response = await fetch(iconUrl, {
+      mode: 'cors',
+      credentials: 'omit'
+    })
+
+    if (!response.ok) {
+      throw new Error(`下载失败: HTTP ${response.status}`)
+    }
+
+    // 获取图标数据
+    const arrayBuffer = await response.arrayBuffer()
+
+    // 检查文件大小
+    if (arrayBuffer.byteLength < 512) {
+      throw new Error('图标文件过小，可能是无效文件')
+    }
+
+    // 创建本地文件路径和文件名
+    const fileName = `${domain}.ico`
+    const localPath = `/sitelogo/${fileName}`
+
+    // 创建data URL用于编辑期间的预览
+    const blob = new Blob([arrayBuffer], { type: 'image/x-icon' })
+    const dataUrl = URL.createObjectURL(blob)
+
+    // 将图标数据缓存到内存中，等待后续上传
+    pendingIcons.value.set(domain, {
+      arrayBuffer,
+      fileName,
+      localPath,
+      domain
+    })
+
+    // 缓存预览URL，用于编辑期间显示
+    // 如果之前有同域名的预览，先清理掉
+    const oldPreview = iconPreviews.value.get(localPath)
+    if (oldPreview) {
+      URL.revokeObjectURL(oldPreview)
+    }
+    iconPreviews.value.set(localPath, dataUrl)
+
+    console.log(`✅ 图标下载并缓存成功: ${localPath}`)
+    return localPath
+  } catch (error) {
+    console.log(`❌ 下载图标失败: ${error.message}`)
+    throw error
+  }
+}
+
+// 上传所有待处理的图标到GitHub（串行上传避免冲突）
+const uploadPendingIconsToGitHub = async () => {
+  const icons = Array.from(pendingIcons.value.values())
+  if (icons.length === 0) {
+    console.log('没有待上传的图标')
+    return
+  }
+
+  console.log(`开始串行上传 ${icons.length} 个图标到GitHub...`)
+
+  const uploadResults = []
+
+  // 串行上传，避免并发冲突
+  for (const icon of icons) {
+    try {
+      const githubPath = `public/sitelogo/${icon.fileName}`
+      const message = `chore: 添加站点图标 ${icon.fileName}`
+
+      console.log(`📤 上传图标: ${icon.fileName}`)
+      await uploadBinaryFile(githubPath, icon.arrayBuffer, message)
+      console.log(`✅ 图标已上传到GitHub: ${githubPath}`)
+
+      // 上传成功后从待处理列表中移除
+      pendingIcons.value.delete(icon.domain)
+      uploadResults.push({ success: true, fileName: icon.fileName })
+    } catch (error) {
+      console.error(`❌ 上传图标 ${icon.fileName} 失败:`, error)
+      uploadResults.push({ success: false, fileName: icon.fileName, error: error.message })
+
+      // 如果是SHA冲突，抛出错误停止上传，否则继续上传其他图标
+      if (error.message.includes('but expected')) {
+        throw new Error(`GitHub文件冲突: ${error.message}`)
+      }
+    }
+  }
+
+  // 检查上传结果
+  const successCount = uploadResults.filter(r => r.success).length
+  const failCount = uploadResults.filter(r => !r.success).length
+
+  console.log(`📊 上传结果: 成功 ${successCount}/${icons.length}`)
+
+  if (failCount > 0) {
+    const failedFiles = uploadResults.filter(r => !r.success).map(r => r.fileName)
+    throw new Error(`部分图标上传失败: ${failedFiles.join(', ')}`)
+  }
+
+  console.log('✅ 所有图标上传完成')
+}
+
 // 获取favicon图标
 const tryFallbackServices = async (domain) => {
   // 首先尝试icon服务
@@ -377,16 +505,15 @@ const tryFallbackServices = async (domain) => {
   try {
     console.log(`🔍 尝试图标服务:`, iconServiceUrl)
 
-    // 使用超时机制避免长时间等待
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('请求超时')), 8000)
-    })
+    // 先测试图标是否可用
+    await testImage(iconServiceUrl)
 
-    await Promise.race([testImage(iconServiceUrl), timeoutPromise])
+    // 下载并缓存到内存
+    const localPath = await downloadAndCacheIcon(iconServiceUrl, domain)
 
-    formData.value.icon = iconServiceUrl
+    formData.value.icon = localPath
     iconError.value = false
-    console.log(`✅ 成功获取图标`)
+    console.log(`✅ 成功获取并保存图标`)
     return
   } catch (error) {
     console.log(`❌ 图标服务失败:`, error.message)
@@ -398,13 +525,13 @@ const tryFallbackServices = async (domain) => {
   try {
     console.log(`🔍 尝试标准路径:`, fallbackUrl)
 
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('请求超时')), 8000)
-    })
+    // 先测试图标是否可用
+    await testImage(fallbackUrl)
 
-    await Promise.race([testImage(fallbackUrl), timeoutPromise])
+    // 下载并缓存到内存
+    const localPath = await downloadAndCacheIcon(fallbackUrl, domain)
 
-    formData.value.icon = fallbackUrl
+    formData.value.icon = localPath
     iconError.value = false
     console.log(`✅ 使用标准favicon.ico路径成功`)
     return
@@ -496,6 +623,30 @@ const closeModal = () => {
 // 处理图片错误
 const handleImageError = (event) => {
   event.target.style.display = 'none'
+}
+
+// 处理保存操作
+const handleSave = async () => {
+  try {
+    // 先上传待处理的图标文件
+    if (pendingIcons.value.size > 0) {
+      await uploadPendingIconsToGitHub()
+    }
+
+    // 然后保存站点数据
+    emit('save')
+
+    // // 保存成功后清理预览缓存，释放内存
+    // iconPreviews.value.forEach((url) => {
+    //   URL.revokeObjectURL(url)
+    // })
+    // iconPreviews.value.clear()
+
+    // console.log('✅ 预览缓存已清理')
+  } catch (error) {
+    console.error('保存失败:', error)
+    alert(`保存失败: ${error.message}`)
+  }
 }
 
 // 重置分页

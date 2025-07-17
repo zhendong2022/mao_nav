@@ -206,6 +206,80 @@ export function useGitHubAPI() {
     }
   }
 
+  // 上传二进制文件到GitHub
+  const uploadBinaryFile = async (path, binaryData, message) => {
+    const { token, owner, repo, branch } = getConfig()
+
+    const url = `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`
+
+    // 创建超时控制
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30秒超时
+
+    try {
+      // 首先检查文件是否已存在
+      let sha = null
+      try {
+        const existingFile = await getFileContent(path)
+        sha = existingFile.sha
+        } catch {
+         // 文件不存在，这是正常的
+          console.log(`文件 ${path} 不存在，将创建新文件`)
+       }
+
+      // 将二进制数据转换为base64
+      const base64Content = arrayBufferToBase64(binaryData)
+
+      const requestBody = {
+        message,
+        content: base64Content,
+        branch
+      }
+
+      // 如果文件已存在，需要提供sha
+      if (sha) {
+        requestBody.sha = sha
+      }
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(`GitHub API Error: ${error.message}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      clearTimeout(timeoutId)
+      if (error.name === 'AbortError') {
+        throw new Error('上传超时，请检查网络连接')
+      }
+      throw error
+    }
+  }
+
+  // 辅助函数：将ArrayBuffer转换为base64
+  const arrayBufferToBase64 = (buffer) => {
+    const bytes = new Uint8Array(buffer)
+    let binary = ''
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    return btoa(binary)
+  }
+
   // 验证GitHub连接
   const verifyGitHubConnection = async () => {
     try {
@@ -242,6 +316,7 @@ export function useGitHubAPI() {
     saveCategoriesToGitHub,
     verifyGitHubConnection,
     getFileContent,
-    updateFileContent
+    updateFileContent,
+    uploadBinaryFile
   }
 }
