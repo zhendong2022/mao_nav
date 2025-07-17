@@ -562,7 +562,7 @@ onUnmounted(() => {
   position: fixed;
   top: 0;
   right: -100%;
-  width: 280px;
+  width: 240px;
   height: 100vh;
   background: white;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
@@ -641,7 +641,7 @@ onUnmounted(() => {
   margin: 0;
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 20px;
+  padding-bottom: 160px; /* 增加底部内边距确保最后一项完全可见 */
 }
 
 .mobile-category-item {
@@ -945,6 +945,7 @@ onUnmounted(() => {
   .nav-home {
     flex-direction: column;
     height: 100vh;
+    height: 100svh; /* 使用动态视口高度 */
     overflow: hidden;
   }
 
@@ -955,6 +956,7 @@ onUnmounted(() => {
   .main-content {
     flex: 1;
     height: 100vh;
+    height: 100svh; /* 使用动态视口高度，更准确 */
     margin-left: 0;
     display: flex;
     flex-direction: column;
@@ -976,7 +978,7 @@ onUnmounted(() => {
     flex: 1;
     padding: 20px 15px;
     padding-top: 100px; /* 为固定的搜索框留出空间 */
-    padding-bottom: 100px;
+    padding-bottom: 300px; /* 增加底部padding确保内容可以完全滚动 */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
   }
