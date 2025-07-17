@@ -74,10 +74,13 @@
         <!-- 移动端分类菜单 -->
         <div class="mobile-menu" :class="{ active: showMobileMenu }">
           <div class="mobile-menu-header">
-            <h3>分类导航</h3>
+            <div class="header-left">
+              <h3>分类导航</h3>
+              <img :src="githubLogo" alt="GitHub" class="header-github-icon" @click="openGitHub" />
+            </div>
             <button class="close-btn" @click="closeMobileMenu">×</button>
           </div>
-          <ul class="mobile-category-list">
+                    <ul class="mobile-category-list">
             <li
               v-for="category in categories"
               :key="category.id"
@@ -176,13 +179,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useNavigation } from '@/apis/useNavigation.js'
 // 导入搜索引擎logo图片
 import googleLogo from '@/assets/goolge.png'
 import baiduLogo from '@/assets/baidu.png'
 import bingLogo from '@/assets/bing.png'
 import duckLogo from '@/assets/duck.png'
+// 导入GitHub logo
+import githubLogo from '@/assets/github.png'
 
 // 使用导航API
 const { categories, title, loading, error, fetchCategories } = useNavigation()
@@ -288,10 +293,18 @@ const handleImageError = (event) => {
 // 移动端菜单控制
 const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value
+  // 控制body滚动
+  if (showMobileMenu.value) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
 }
 
 const closeMobileMenu = () => {
   showMobileMenu.value = false
+  // 恢复body滚动
+  document.body.style.overflow = ''
 }
 
 // 移动端分类滚动
@@ -304,9 +317,20 @@ const scrollToCategoryMobile = (categoryId) => {
   }, 200)
 }
 
+// 打开GitHub项目页面
+const openGitHub = () => {
+  window.open('https://github.com/maodeyu180/mao_nav', '_blank')
+}
+
 // 组件挂载时获取数据
 onMounted(() => {
   fetchCategories()
+})
+
+// 组件卸载时清理样式
+onUnmounted(() => {
+  // 确保卸载时恢复body滚动
+  document.body.style.overflow = ''
 })
 </script>
 
@@ -545,6 +569,9 @@ onMounted(() => {
   z-index: 1001;
   transition: right 0.3s ease;
   overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .mobile-menu.active {
@@ -559,12 +586,33 @@ onMounted(() => {
   border-bottom: 1px solid #e9ecef;
   background: #2c3e50;
   color: white;
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .mobile-menu-header h3 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
+}
+
+.header-github-icon {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  opacity: 0.8;
+}
+
+.header-github-icon:hover {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .close-btn {
@@ -591,6 +639,9 @@ onMounted(() => {
   list-style: none;
   padding: 0;
   margin: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 20px;
 }
 
 .mobile-category-item {
@@ -618,6 +669,8 @@ onMounted(() => {
   font-weight: 500;
   color: #2c3e50;
 }
+
+
 
 /* 移动端菜单遮罩 */
 .mobile-menu-overlay {
@@ -786,6 +839,9 @@ onMounted(() => {
   color: #7f8c8d;
   margin: 0;
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 页面底部 */
@@ -931,12 +987,27 @@ onMounted(() => {
   }
 
   .sites-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
 
   .site-card {
-    padding: 15px;
+    padding: 12px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .site-card .site-icon {
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
+
+  .site-card .site-name {
+    font-size: 15px;
+  }
+
+  .site-card .site-description {
+    font-size: 12px;
   }
 
   .category-title {
