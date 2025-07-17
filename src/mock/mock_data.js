@@ -261,7 +261,7 @@ export const mockData = {
           "name": "Adobe XD",
           "url": "https://www.adobe.com/products/xd.html",
           "description": "用户体验设计工具",
-          "icon": "https://icon.maodeyu.fun/favicon/www.adobe.com"
+          "icon": "/sitelogo/www.adobe.com.ico"
         }
       ]
     },
