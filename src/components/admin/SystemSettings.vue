@@ -238,12 +238,24 @@ VITE_GITHUB_BRANCH=your_github_branch_here</code></pre>
         </div>
       </div>
     </div>
+
+    <!-- 自定义弹框 -->
+    <CustomDialog
+      :visible="dialogVisible"
+      :type="dialogType"
+      :title="dialogTitle"
+      :message="dialogMessage"
+      :details="dialogDetails"
+      @close="closeDialog"
+      @confirm="closeDialog"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useGitHubAPI } from '../../apis/useGitHubAPI.js'
+import CustomDialog from './CustomDialog.vue'
 
 const { verifyGitHubConnection, loadCategoriesFromGitHub, saveCategoriesToGitHub, uploadBinaryFile } = useGitHubAPI()
 
@@ -278,6 +290,27 @@ const selectedLogoFile = ref(null)
 const logoPreview = ref('')
 const currentLogo = ref('/logo.png')
 const logoSaving = ref(false)
+
+// 自定义弹框状态
+const dialogVisible = ref(false)
+const dialogType = ref('success')
+const dialogTitle = ref('')
+const dialogMessage = ref('')
+const dialogDetails = ref([])
+
+// 显示弹框
+const showDialog = (type, title, message, details = []) => {
+  dialogType.value = type
+  dialogTitle.value = title
+  dialogMessage.value = message
+  dialogDetails.value = details
+  dialogVisible.value = true
+}
+
+// 关闭弹框
+const closeDialog = () => {
+  dialogVisible.value = false
+}
 
 // 测试GitHub连接
 const testConnection = async () => {
@@ -330,7 +363,12 @@ const loadWebsiteSettings = async () => {
 // 保存标题到GitHub
 const saveTitleToGitHub = async () => {
   if (!websiteTitle.value.trim()) {
-    alert('请输入网站标题')
+    showDialog(
+      'error',
+      '❌ 输入错误',
+      '请输入网站标题',
+      []
+    )
     return
   }
 
@@ -346,10 +384,24 @@ const saveTitleToGitHub = async () => {
     await saveCategoriesToGitHub(data)
 
     currentTitle.value = websiteTitle.value.trim()
-    alert('✅ 网站标题保存成功！')
+    showDialog(
+      'success',
+      '🎉 网站标题保存成功',
+      '您的网站标题已成功保存到GitHub仓库！',
+      [
+        '• 更改将在 2-3 分钟内自动部署到线上',
+        '• 部署完成后，您可以在前台页面看到最新标题',
+        '• 如有问题，请检查Vercel或CFpage是否触发自动部署'
+      ]
+    )
   } catch (error) {
     console.error('保存标题失败:', error)
-    alert(`❌ 保存失败: ${error.message}`)
+    showDialog(
+      'error',
+      '❌ 保存失败',
+      '网站标题保存过程中发生错误，请重试',
+      [`• 错误详情: ${error.message}`]
+    )
   } finally {
     titleSaving.value = false
   }
@@ -367,13 +419,23 @@ const handleLogoSelect = (event) => {
 
   // 验证文件类型
   if (file.type !== 'image/png') {
-    alert('❌ 请选择PNG格式的图片文件')
+    showDialog(
+      'error',
+      '❌ 文件格式错误',
+      '请选择PNG格式的图片文件',
+      []
+    )
     return
   }
 
   // 验证文件大小 (限制为2MB)
   if (file.size > 2 * 1024 * 1024) {
-    alert('❌ 图片文件大小不能超过2MB')
+    showDialog(
+      'error',
+      '❌ 文件过大',
+      '图片文件大小不能超过2MB',
+      [`• 当前文件大小: ${(file.size / 1024 / 1024).toFixed(2)}MB`]
+    )
     return
   }
 
@@ -390,7 +452,12 @@ const handleLogoSelect = (event) => {
 // 保存Logo到GitHub
 const saveLogoToGitHub = async () => {
   if (!selectedLogoFile.value) {
-    alert('请先选择Logo文件')
+    showDialog(
+      'error',
+      '❌ 未选择文件',
+      '请先选择Logo文件',
+      []
+    )
     return
   }
 
@@ -413,10 +480,24 @@ const saveLogoToGitHub = async () => {
     logoPreview.value = ''
     logoFileInput.value.value = ''
 
-    alert('✅ Logo上传成功！刷新页面后生效。')
+    showDialog(
+      'success',
+      '🎉 Logo上传成功',
+      '您的网站Logo已成功保存到GitHub仓库！',
+      [
+        '• 更改将在 2-3 分钟内自动部署到线上',
+        '• 部署完成后，刷新页面即可看到新Logo',
+        '• 如有问题，请检查Vercel或CFpage是否触发自动部署'
+      ]
+    )
   } catch (error) {
     console.error('上传Logo失败:', error)
-    alert(`❌ 上传失败: ${error.message}`)
+    showDialog(
+      'error',
+      '❌ 上传失败',
+      'Logo上传过程中发生错误，请重试',
+      [`• 错误详情: ${error.message}`]
+    )
   } finally {
     logoSaving.value = false
   }
