@@ -276,7 +276,7 @@ const titleSaving = ref(false)
 const logoFileInput = ref(null)
 const selectedLogoFile = ref(null)
 const logoPreview = ref('')
-const currentLogo = ref('/src/assets/logo.png')
+const currentLogo = ref('/logo.png')
 const logoSaving = ref(false)
 
 // 测试GitHub连接
@@ -400,7 +400,7 @@ const saveLogoToGitHub = async () => {
     const arrayBuffer = await selectedLogoFile.value.arrayBuffer()
 
     // 上传到GitHub
-    const githubPath = 'src/assets/logo.png'
+    const githubPath = 'public/logo.png'
     const message = `chore: 更新网站Logo - ${new Date().toLocaleString('zh-CN')}`
 
     await uploadBinaryFile(githubPath, arrayBuffer, message)
