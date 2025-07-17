@@ -4,7 +4,7 @@
     <aside class="sidebar">
       <!-- Logo区域 -->
       <div class="logo-section">
-        <img src="@/assets/logo.png" alt="logo" class="logo" />
+        <img src="/logo.png" alt="logo" class="logo" />
         <h1 class="site-title">{{ title || '猫猫导航' }}</h1>
       </div>
 

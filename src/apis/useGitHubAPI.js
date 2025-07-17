@@ -25,10 +25,12 @@ export function useGitHubAPI() {
   }
 
   // 获取文件内容
-  const getFileContent = async (path) => {
+  const getFileContent = async (path, isBinaryFile = false) => {
     const { token, owner, repo } = getConfig()
 
-    const url = `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`
+    // 对路径进行URL编码，但保留斜杠
+    const encodedPath = path.split('/').map(segment => encodeURIComponent(segment)).join('/')
+    const url = `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${encodedPath}`
 
     // 创建超时控制
     const controller = new AbortController()
@@ -69,7 +71,7 @@ export function useGitHubAPI() {
       }
 
       return {
-        content: decodeURIComponent(escape(atob(data.content))), // 正确处理中文解码
+        content: isBinaryFile ? data.content : decodeURIComponent(escape(atob(data.content))), // 二进制文件不解码
         sha: data.sha,
         path: data.path
       }
@@ -104,7 +106,9 @@ export function useGitHubAPI() {
   const updateFileContent = async (path, content, message, sha) => {
     const { token, owner, repo, branch } = getConfig()
 
-    const url = `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`
+    // 对路径进行URL编码，但保留斜杠
+    const encodedPath = path.split('/').map(segment => encodeURIComponent(segment)).join('/')
+    const url = `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${encodedPath}`
 
     // 创建超时控制
     const controller = new AbortController()
@@ -210,7 +214,9 @@ export function useGitHubAPI() {
   const uploadBinaryFile = async (path, binaryData, message) => {
     const { token, owner, repo, branch } = getConfig()
 
-    const url = `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`
+    // 对路径进行URL编码，但保留斜杠
+    const encodedPath = path.split('/').map(segment => encodeURIComponent(segment)).join('/')
+    const url = `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${encodedPath}`
 
     // 创建超时控制
     const controller = new AbortController()
@@ -220,12 +226,20 @@ export function useGitHubAPI() {
       // 首先检查文件是否已存在
       let sha = null
       try {
-        const existingFile = await getFileContent(path)
+        const existingFile = await getFileContent(path, true) // 标记为二进制文件
         sha = existingFile.sha
-        } catch {
-         // 文件不存在，这是正常的
+        console.log(`文件 ${path} 已存在，获取到 SHA: ${sha}`)
+      } catch (error) {
+        console.log(`检查文件 ${path} 时出错:`, error.message)
+
+        // 如果是404错误，说明文件不存在，这是正常的
+        if (error.message.includes('404') || error.message.includes('Not Found')) {
           console.log(`文件 ${path} 不存在，将创建新文件`)
-       }
+        } else {
+          // 其他错误可能是网络问题或权限问题，重新抛出
+          throw new Error(`无法检查文件是否存在: ${error.message}`)
+        }
+      }
 
       // 将二进制数据转换为base64
       const base64Content = arrayBufferToBase64(binaryData)
