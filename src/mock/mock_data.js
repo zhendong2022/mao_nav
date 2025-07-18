@@ -33,6 +33,13 @@ export const mockData = {
           "url": "https://curlconverter.com/",
           "description": "curl命令转换工具",
           "icon": "/sitelogo/curlconverter.com.ico"
+        },
+        {
+          "id": "site-1752857783656",
+          "name": "Deepseek",
+          "url": "https://deepseek.com",
+          "description": "好用的国产模型",
+          "icon": "/sitelogo/deepseek.com.ico"
         }
       ]
     },
