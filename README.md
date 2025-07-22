@@ -25,7 +25,7 @@
 
 
 ## 🚀 快速开始
-
+图文教程可访问[猫猫导航图文教程](https://blog.maodeyu.fun/2025/07/16/nav_mao/)
 ### 🚀 部署到 Cloudflare（推荐）
 
 **1. Fork 本项目**
