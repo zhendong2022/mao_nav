@@ -300,18 +300,18 @@ export const mockData = {
           "icon": "/sitelogo/www.bitget.com.ico"
         },
         {
-          "id": "tonghuashun",
-          "name": "同花顺",
-          "url": "https://www.10jqka.com.cn",
-          "description": "专业股票软件及金融信息服务",
-          "icon": "/sitelogo/www.10jqka.com.cn.ico"
-        },
-        {
           "id": "tradingview",
           "name": "TradingView",
           "url": "https://cn.tradingview.com",
           "description": "专业金融图表和交易平台",
           "icon": "/sitelogo/cn.tradingview.com.ico"
+        },
+        {
+          "id": "tonghuashun",
+          "name": "同花顺",
+          "url": "https://www.10jqka.com.cn",
+          "description": "专业股票软件及金融信息服务",
+          "icon": "/sitelogo/www.10jqka.com.cn.ico"
         },
         {
           "id": "xueqiu",
