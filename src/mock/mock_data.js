@@ -7,6 +7,13 @@ export const mockData = {
       "order": 0,
       "sites": [
         {
+          "id": "site-1753148454597",
+          "name": "我的主站",
+          "url": "https://maodeyu.fun",
+          "description": "",
+          "icon": "https://www.faviconextractor.com/favicon/maodeyu.fun"
+        },
+        {
           "id": "linux-do",
           "name": "Linux.do",
           "url": "https://linux.do",
