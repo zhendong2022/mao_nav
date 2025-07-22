@@ -7,13 +7,6 @@ export const mockData = {
       "order": 0,
       "sites": [
         {
-          "id": "site-1753148454597",
-          "name": "我的主站",
-          "url": "https://maodeyu.fun",
-          "description": "",
-          "icon": "https://www.faviconextractor.com/favicon/maodeyu.fun"
-        },
-        {
           "id": "linux-do",
           "name": "Linux.do",
           "url": "https://linux.do",
@@ -43,10 +36,10 @@ export const mockData = {
         },
         {
           "id": "site-1752857783656",
-          "name": "Deepseek",
-          "url": "https://deepseek.com",
-          "description": "好用的国产模型",
-          "icon": "/sitelogo/deepseek.com.ico"
+          "name": "OpenAI",
+          "url": "https://chatgpt.com",
+          "description": "OpenAI,好用👌",
+          "icon": "/sitelogo/chatgpt.com.ico"
         }
       ]
     },
