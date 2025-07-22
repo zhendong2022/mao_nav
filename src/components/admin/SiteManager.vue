@@ -33,69 +33,68 @@
         <span class="stat-label">当前显示</span>
       </div>
       <div class="stat-info">
-        💡 提示：使用 ⬆️ ⬇️ 按钮可以调整站点显示顺序
+        💡 提示：选择分类后可拖拽排序，拖到页面边缘会自动滚动
       </div>
     </div>
 
     <!-- 站点列表 -->
     <div class="sites-list">
-      <div
-        v-for="site in paginatedSites"
-        :key="site.id"
-        class="site-item"
+      <draggable
+        v-model="currentPageSites"
+        v-bind="dragOptions"
+        @end="onDragEnd"
+        item-key="id"
+        tag="div"
+        class="draggable-list"
+        :class="{ 'pagination-disabled': !selectedCategoryId }"
       >
-        <div class="site-info">
-          <div class="site-icon">
-            <img :src="getIconDisplayUrl(site.icon)" :alt="site.name" @error="handleImageError">
+        <template #item="{ element: site }">
+          <div
+            class="site-item"
+            :class="{ 'draggable-item': selectedCategoryId }"
+          >
+            <div class="drag-handle" v-if="selectedCategoryId" title="拖拽排序">
+              ⋮⋮
+            </div>
+            <div class="site-info">
+              <div class="site-icon">
+                <img :src="getIconDisplayUrl(site.icon)" :alt="site.name" @error="handleImageError">
+              </div>
+              <div class="site-details">
+                <h3>{{ site.name }}</h3>
+                <p class="site-description">{{ site.description }}</p>
+                <a :href="site.url" target="_blank" rel="noopener noreferrer" class="site-url">
+                  {{ site.url }}
+                </a>
+                <span class="site-category">
+                  {{ getCategoryName(site.categoryId) }}
+                </span>
+              </div>
+            </div>
+            <div class="site-actions">
+              <button @click="editSite(site)" class="edit-btn">
+                ✏️ 编辑
+              </button>
+              <button @click="deleteSite(site)" class="delete-btn">
+                🗑️ 删除
+              </button>
+            </div>
           </div>
-          <div class="site-details">
-            <h3>{{ site.name }}</h3>
-            <p class="site-description">{{ site.description }}</p>
-            <a :href="site.url" target="_blank" rel="noopener noreferrer" class="site-url">
-              {{ site.url }}
-            </a>
-            <span class="site-category">
-              {{ getCategoryName(site.categoryId) }}
-            </span>
-          </div>
-        </div>
-        <div class="site-actions">
-          <button @click="moveSiteUp(site)" :disabled="!canMoveUp(site)" class="move-btn move-up" title="上移">
-            ⬆️
-          </button>
-          <button @click="moveSiteDown(site)" :disabled="!canMoveDown(site)" class="move-btn move-down" title="下移">
-            ⬇️
-          </button>
-          <button @click="editSite(site)" class="edit-btn">
-            ✏️ 编辑
-          </button>
-          <button @click="deleteSite(site)" class="delete-btn">
-            🗑️ 删除
-          </button>
-        </div>
+        </template>
+      </draggable>
+
+      <!-- 提示 -->
+      <div v-if="!selectedCategoryId" class="pagination-notice">
+        💡 请选择具体分类以启用拖拽排序功能
+      </div>
+
+      <!-- 拖拽帮助 -->
+      <div v-if="selectedCategoryId && filteredSites.length > 5" class="drag-help">
+        🖱️ 拖拽到页面顶部或底部边缘可自动滚动
       </div>
     </div>
 
-    <!-- 分页 -->
-    <div class="pagination" v-if="totalPages > 1">
-      <button
-        @click="currentPage--"
-        :disabled="currentPage === 1"
-        class="page-btn"
-      >
-        ⬅️ 上一页
-      </button>
-      <span class="page-info">
-        第 {{ currentPage }} 页，共 {{ totalPages }} 页
-      </span>
-      <button
-        @click="currentPage++"
-        :disabled="currentPage === totalPages"
-        class="page-btn"
-      >
-        下一页 ➡️
-      </button>
-    </div>
+
 
     <!-- 添加/编辑站点弹窗 -->
     <div v-if="showAddModal || editingSite" class="modal-overlay">
@@ -186,6 +185,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useGitHubAPI } from '../../apis/useGitHubAPI.js'
+import draggable from 'vuedraggable'
 
 const props = defineProps({
   categories: {
@@ -216,10 +216,8 @@ const pendingIcons = ref(new Map())
 // 图标预览缓存 - 用于在编辑期间显示图标
 const iconPreviews = ref(new Map())
 
-// 分页和筛选
+// 筛选
 const selectedCategoryId = ref('')
-const currentPage = ref(1)
-const pageSize = 10
 
 // 弹窗状态
 const showAddModal = ref(false)
@@ -244,7 +242,6 @@ watch(() => props.categories, (newCategories) => {
 watch(() => props.initialSelectedCategoryId, (newCategoryId) => {
   if (newCategoryId) {
     selectedCategoryId.value = newCategoryId
-    currentPage.value = 1 // 重置到第一页
   }
 }, { immediate: true })
 
@@ -278,12 +275,31 @@ const filteredSites = computed(() => {
   return allSites.value.filter(site => site.categoryId === selectedCategoryId.value)
 })
 
-const totalPages = computed(() => Math.ceil(filteredSites.value.length / pageSize))
+// 当前显示的站点（用于拖拽排序）
+const currentPageSites = computed({
+  get() {
+    return filteredSites.value
+  },
+  set(newSites) {
+    // 拖拽排序后更新站点顺序
+    updateSitesOrder(newSites)
+  }
+})
 
-const paginatedSites = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  const end = start + pageSize
-  return filteredSites.value.slice(start, end)
+// 拖拽配置
+const dragOptions = computed(() => {
+  return {
+    animation: 200,
+    group: "sites",
+    disabled: !selectedCategoryId.value, // 只有选择了具体分类才能拖拽
+    ghostClass: "sortable-ghost",
+    // 启用拖拽时自动滚动
+    scroll: true,
+    forceAutoScrollFallback: true, // 强制启用滚动回退
+    scrollSensitivity: 100, // 距离边缘100px时开始滚动
+    scrollSpeed: 15, // 滚动速度
+    bubbleScroll: true // 支持嵌套滚动
+  }
 })
 
 // 获取分类名称
@@ -330,54 +346,33 @@ const deleteSite = (site) => {
   }
 }
 
-// 移动站点上移
-const moveSiteUp = (site) => {
-  const category = localCategories.value.find(cat => cat.id === site.categoryId)
-  if (!category || !category.sites) return
+// 拖拽排序：更新站点顺序
+const updateSitesOrder = (newSites) => {
+  if (!selectedCategoryId.value) {
+    // 如果是显示所有分类，拖拽排序会比较复杂，暂时不支持
+    console.warn('暂不支持跨分类拖拽排序')
+    return
+  }
 
-  const currentIndex = category.sites.findIndex(s => s.id === site.id)
-  if (currentIndex === -1 || currentIndex === 0) return
+  // 找到当前分类
+  const category = localCategories.value.find(cat => cat.id === selectedCategoryId.value)
+  if (!category) return
 
-  // 交换位置
-  const temp = category.sites[currentIndex]
-  category.sites[currentIndex] = category.sites[currentIndex - 1]
-  category.sites[currentIndex - 1] = temp
-
-  syncToParent()
-}
-
-// 移动站点下移
-const moveSiteDown = (site) => {
-  const category = localCategories.value.find(cat => cat.id === site.categoryId)
-  if (!category || !category.sites) return
-
-  const currentIndex = category.sites.findIndex(s => s.id === site.id)
-  if (currentIndex === -1 || currentIndex === category.sites.length - 1) return
-
-  // 交换位置
-  const temp = category.sites[currentIndex]
-  category.sites[currentIndex] = category.sites[currentIndex + 1]
-  category.sites[currentIndex + 1] = temp
+  // 更新该分类的站点顺序
+  category.sites = newSites.map(site => ({
+    id: site.id,
+    name: site.name,
+    url: site.url,
+    description: site.description,
+    icon: site.icon
+  }))
 
   syncToParent()
 }
 
-// 判断是否可以上移
-const canMoveUp = (site) => {
-  const category = localCategories.value.find(cat => cat.id === site.categoryId)
-  if (!category || !category.sites) return false
-
-  const currentIndex = category.sites.findIndex(s => s.id === site.id)
-  return currentIndex > 0
-}
-
-// 判断是否可以下移
-const canMoveDown = (site) => {
-  const category = localCategories.value.find(cat => cat.id === site.categoryId)
-  if (!category || !category.sites) return false
-
-  const currentIndex = category.sites.findIndex(s => s.id === site.id)
-  return currentIndex < category.sites.length - 1
+// 拖拽结束事件
+const onDragEnd = (event) => {
+  console.log('拖拽排序完成:', event)
 }
 
 
@@ -761,9 +756,9 @@ const handleSave = async () => {
   }
 }
 
-// 重置分页
+// 监听分类变化
 watch(selectedCategoryId, () => {
-  currentPage.value = 1
+  console.log('分类切换:', selectedCategoryId.value)
 })
 </script>
 
@@ -878,10 +873,49 @@ watch(selectedCategoryId, () => {
 }
 
 .sites-list {
+  margin-bottom: 30px;
+}
+
+.draggable-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  margin-bottom: 30px;
+}
+
+
+
+.pagination-notice {
+  text-align: center;
+  padding: 20px;
+  background: #e8f5e8;
+  border: 1px solid #4caf50;
+  border-radius: 8px;
+  color: #2e7d32;
+  font-size: 14px;
+  margin-top: 20px;
+}
+
+.drag-help {
+  text-align: center;
+  padding: 12px 20px;
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 6px;
+  color: #1565c0;
+  font-size: 13px;
+  margin-top: 15px;
+  opacity: 0.9;
+}
+
+.pagination-disabled .site-item {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.pagination-disabled .site-item:hover {
+  transform: none;
+  background: #f8f9fa;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .site-item {
@@ -892,11 +926,64 @@ watch(selectedCategoryId, () => {
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
-  transition: box-shadow 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .site-item:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.draggable-item {
+  cursor: move;
+  position: relative;
+}
+
+.draggable-item:hover {
+  background: #f1f3f4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.draggable-item.sortable-chosen {
+  background: #e3f2fd;
+  border-color: #2196f3;
+  transform: rotate(3deg);
+  box-shadow: 0 8px 20px rgba(33, 150, 243, 0.3);
+}
+
+.draggable-item.sortable-ghost {
+  opacity: 0.5;
+  background: #e8f5e8;
+  border: 2px dashed #4caf50;
+}
+
+.drag-handle {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #95a5a6;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: grab;
+  padding: 8px 4px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.drag-handle:hover {
+  color: #3498db;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  color: #2980b9;
+}
+
+.draggable-item .site-info {
+  margin-left: 30px;
 }
 
 .site-info {
@@ -915,6 +1002,7 @@ watch(selectedCategoryId, () => {
   align-items: center;
   justify-content: center;
   border: 1px solid #e9ecef;
+  flex-shrink: 0;
 }
 
 .site-icon img {
@@ -966,32 +1054,13 @@ watch(selectedCategoryId, () => {
   gap: 10px;
 }
 
-.move-btn, .edit-btn, .delete-btn {
+.edit-btn, .delete-btn {
   padding: 6px 12px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
   transition: all 0.3s ease;
-}
-
-.move-btn {
-  background: #95a5a6;
-  color: white;
-  min-width: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.move-btn:hover:not(:disabled) {
-  background: #7f8c8d;
-}
-
-.move-btn:disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .edit-btn {
@@ -1012,37 +1081,7 @@ watch(selectedCategoryId, () => {
   background: #c0392b;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  padding: 20px 0;
-}
 
-.page-btn {
-  padding: 8px 16px;
-  background: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: #2980b9;
-}
-
-.page-btn:disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-}
-
-.page-info {
-  color: #7f8c8d;
-  font-size: 14px;
-}
 
 /* 弹窗样式 */
 .modal-overlay {
@@ -1257,12 +1296,6 @@ watch(selectedCategoryId, () => {
     gap: 8px;
   }
 
-  .move-btn {
-    min-width: 28px;
-    padding: 4px 8px;
-    font-size: 10px;
-  }
-
   .form-row {
     grid-template-columns: 1fr;
   }
@@ -1281,6 +1314,27 @@ watch(selectedCategoryId, () => {
   .category-hint {
     font-size: 12px;
     padding: 2px 6px;
+  }
+
+  .draggable-item .site-info {
+    margin-left: 20px;
+  }
+
+  .drag-handle {
+    left: 4px;
+    font-size: 14px;
+    padding: 6px 2px;
+  }
+
+  .pagination-notice {
+    padding: 15px;
+    font-size: 13px;
+  }
+
+  .drag-help {
+    padding: 10px 15px;
+    font-size: 12px;
+    margin-top: 10px;
   }
 }
 </style>
