@@ -5,11 +5,11 @@
       <div class="header-actions">
         <select v-model="selectedCategoryId" class="category-filter">
           <option value="">所有分类</option>
-          <option v-for="category in categories" :key="category.id" :value="category.id">
+          <option v-for="category in localCategories" :key="category.id" :value="category.id">
             {{ category.icon }} {{ category.name }}
           </option>
         </select>
-        <button @click="showAddModal = true" class="add-btn">
+        <button @click="openAddModal" class="add-btn">
           ➕ 添加站点
         </button>
         <button @click="handleSave" :disabled="loading" class="save-btn">
@@ -25,12 +25,15 @@
         <span class="stat-label">总站点数</span>
       </div>
       <div class="stat-item">
-        <span class="stat-number">{{ categories.length }}</span>
+        <span class="stat-number">{{ localCategories.length }}</span>
         <span class="stat-label">分类数</span>
       </div>
       <div class="stat-item">
         <span class="stat-number">{{ filteredSites.length }}</span>
         <span class="stat-label">当前显示</span>
+      </div>
+      <div class="stat-info">
+        💡 提示：使用 ⬆️ ⬇️ 按钮可以调整站点显示顺序
       </div>
     </div>
 
@@ -57,6 +60,12 @@
           </div>
         </div>
         <div class="site-actions">
+          <button @click="moveSiteUp(site)" :disabled="!canMoveUp(site)" class="move-btn move-up" title="上移">
+            ⬆️
+          </button>
+          <button @click="moveSiteDown(site)" :disabled="!canMoveDown(site)" class="move-btn move-down" title="下移">
+            ⬇️
+          </button>
           <button @click="editSite(site)" class="edit-btn">
             ✏️ 编辑
           </button>
@@ -92,7 +101,12 @@
     <div v-if="showAddModal || editingSite" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>{{ editingSite ? '编辑站点' : '添加站点' }}</h3>
+          <h3>
+            {{ editingSite ? '编辑站点' : '添加站点' }}
+            <span v-if="!editingSite && formData.categoryId" class="category-hint">
+              → {{ getCategoryName(formData.categoryId) }}
+            </span>
+          </h3>
           <button @click="closeModal" class="close-btn">✕</button>
         </div>
 
@@ -111,8 +125,9 @@
               <label>所属分类 *:</label>
               <select v-model="formData.categoryId" required class="form-input">
                 <option value="">请选择分类</option>
-                <option v-for="category in categories" :key="category.id" :value="category.id">
+                <option v-for="category in localCategories" :key="category.id" :value="category.id">
                   {{ category.icon }} {{ category.name }}
+                  <span v-if="category.id === selectedCategoryId">(当前筛选)</span>
                 </option>
               </select>
             </div>
@@ -293,6 +308,7 @@ const getIconDisplayUrl = (iconPath) => {
 // 编辑站点
 const editSite = (site) => {
   editingSite.value = site
+  showAddModal.value = false // 确保添加弹窗关闭
   formData.value = {
     name: site.name,
     url: site.url,
@@ -314,6 +330,58 @@ const deleteSite = (site) => {
   }
 }
 
+// 移动站点上移
+const moveSiteUp = (site) => {
+  const category = localCategories.value.find(cat => cat.id === site.categoryId)
+  if (!category || !category.sites) return
+
+  const currentIndex = category.sites.findIndex(s => s.id === site.id)
+  if (currentIndex === -1 || currentIndex === 0) return
+
+  // 交换位置
+  const temp = category.sites[currentIndex]
+  category.sites[currentIndex] = category.sites[currentIndex - 1]
+  category.sites[currentIndex - 1] = temp
+
+  syncToParent()
+}
+
+// 移动站点下移
+const moveSiteDown = (site) => {
+  const category = localCategories.value.find(cat => cat.id === site.categoryId)
+  if (!category || !category.sites) return
+
+  const currentIndex = category.sites.findIndex(s => s.id === site.id)
+  if (currentIndex === -1 || currentIndex === category.sites.length - 1) return
+
+  // 交换位置
+  const temp = category.sites[currentIndex]
+  category.sites[currentIndex] = category.sites[currentIndex + 1]
+  category.sites[currentIndex + 1] = temp
+
+  syncToParent()
+}
+
+// 判断是否可以上移
+const canMoveUp = (site) => {
+  const category = localCategories.value.find(cat => cat.id === site.categoryId)
+  if (!category || !category.sites) return false
+
+  const currentIndex = category.sites.findIndex(s => s.id === site.id)
+  return currentIndex > 0
+}
+
+// 判断是否可以下移
+const canMoveDown = (site) => {
+  const category = localCategories.value.find(cat => cat.id === site.categoryId)
+  if (!category || !category.sites) return false
+
+  const currentIndex = category.sites.findIndex(s => s.id === site.id)
+  return currentIndex < category.sites.length - 1
+}
+
+
+
 // 通用图标测试函数
 const testImage = async (imageUrl) => {
   console.log(`🔍 开始检测图标: ${imageUrl}`)
@@ -334,9 +402,9 @@ const testImage = async (imageUrl) => {
         throw new Error(`HTTP ${response.status}: 无法访问图标`)
       }
 
-      // 检查Content-Length，如果小于512bytes认为可能是空文件或无效图标
+      // 检查Content-Length，如果过小认为可能是空文件或无效图标
       const contentLength = response.headers.get('content-length')
-      if (contentLength && parseInt(contentLength) < 512) {
+      if (contentLength && parseInt(contentLength) < 100) {
         throw new Error(`文件过小 (${contentLength} bytes)，可能是空的或无效图标`)
       }
 
@@ -348,7 +416,7 @@ const testImage = async (imageUrl) => {
         }
 
         const arrayBuffer = await fullResponse.arrayBuffer()
-        if (arrayBuffer.byteLength < 512) {
+        if (arrayBuffer.byteLength < 100) {
           throw new Error(`下载文件过小 (${arrayBuffer.byteLength} bytes)，可能是空的或无效图标`)
         }
       }
@@ -375,9 +443,9 @@ const testImage = async (imageUrl) => {
     const img = new Image()
     img.onload = () => {
       // 检查图片尺寸，过小可能是错误页面或无效图标
-      if (img.naturalWidth < 8 || img.naturalHeight < 8) {
-        console.log(`❌ 图片尺寸过小: ${img.naturalWidth}x${img.naturalHeight}`)
-        reject(new Error(`图片尺寸过小 (${img.naturalWidth}x${img.naturalHeight})，可能是无效图标`))
+      if (img.naturalWidth < 1 || img.naturalHeight < 1) {
+        console.log(`❌ 图片尺寸无效: ${img.naturalWidth}x${img.naturalHeight}`)
+        reject(new Error(`图片尺寸无效 (${img.naturalWidth}x${img.naturalHeight})，可能是无效图标`))
         return
       }
       console.log(`✅ 跨域图标检测成功，尺寸: ${img.naturalWidth}x${img.naturalHeight}`)
@@ -392,27 +460,30 @@ const testImage = async (imageUrl) => {
   })
 }
 
+
+
 // 下载图标并缓存
 const downloadAndCacheIcon = async (iconUrl, domain) => {
-  try {
-    console.log(`📥 开始下载图标: ${iconUrl}`)
+  console.log(`📥 开始下载图标: ${iconUrl}`)
 
-    // 使用fetch下载图标
+  // 优先尝试fetch直接下载
+  try {
     const response = await fetch(iconUrl, {
       mode: 'cors',
-      credentials: 'omit'
+      credentials: 'omit',
+      headers: {
+        'Accept': 'image/*,*/*;q=0.8'
+      }
     })
 
     if (!response.ok) {
-      throw new Error(`下载失败: HTTP ${response.status}`)
+      throw new Error(`HTTP ${response.status}`)
     }
 
-    // 获取图标数据
     const arrayBuffer = await response.arrayBuffer()
 
-    // 检查文件大小
-    if (arrayBuffer.byteLength < 512) {
-      throw new Error('图标文件过小，可能是无效文件')
+    if (arrayBuffer.byteLength < 100) {
+      throw new Error(`图标文件过小 (${arrayBuffer.byteLength} bytes)`)
     }
 
     // 创建本地文件路径和文件名
@@ -432,18 +503,24 @@ const downloadAndCacheIcon = async (iconUrl, domain) => {
     })
 
     // 缓存预览URL，用于编辑期间显示
-    // 如果之前有同域名的预览，先清理掉
     const oldPreview = iconPreviews.value.get(localPath)
     if (oldPreview) {
       URL.revokeObjectURL(oldPreview)
     }
     iconPreviews.value.set(localPath, dataUrl)
 
-    console.log(`✅ 图标下载并缓存成功: ${localPath}`)
+    console.log(`✅ Fetch下载成功: ${localPath}，文件大小: ${arrayBuffer.byteLength} bytes`)
     return localPath
-  } catch (error) {
-    console.log(`❌ 下载图标失败: ${error.message}`)
-    throw error
+  } catch (fetchError) {
+    console.warn(`⚠️ Fetch下载失败: ${fetchError.message}，尝试Canvas方法`)
+
+    // 如果fetch失败，使用Canvas方法
+    // try {
+    //   return await downloadIconViaCanvas(iconUrl, domain)
+    // } catch (canvasError) {
+    //   console.error(`❌ Canvas下载也失败: ${canvasError.message}`)
+    //   throw new Error(`所有下载方法都失败: Fetch(${fetchError.message}), Canvas(${canvasError.message})`)
+    // }
   }
 }
 
@@ -500,41 +577,65 @@ const uploadPendingIconsToGitHub = async () => {
 // 获取favicon图标
 const tryFallbackServices = async (domain) => {
   // 首先尝试icon服务
-  const iconServiceUrl = `https://icon.maodeyu.fun/favicon/${domain}`
+  // 支持多个favicon服务轮询尝试
+  const iconServiceUrls = [
+    // `https://www.faviconextractor.com/favicon/${domain}`,
+    `https://icon.maodeyu.fun/favicon/${domain}`
+  ]
 
-  try {
-    console.log(`🔍 尝试图标服务:`, iconServiceUrl)
+  for (const iconServiceUrl of iconServiceUrls) {
+    try {
+      console.log(`🔍 尝试图标服务:`, iconServiceUrl)
 
-    // 先测试图标是否可用
-    await testImage(iconServiceUrl)
+      // 先测试图标是否可用
+      // await testImage(iconServiceUrl)
+      // console.log(`✅ 图标测试通过: ${iconServiceUrl}`)
 
-    // 下载并缓存到内存
-    const localPath = await downloadAndCacheIcon(iconServiceUrl, domain)
-
-    formData.value.icon = localPath
-    iconError.value = false
-    console.log(`✅ 成功获取并保存图标`)
-    return
-  } catch (error) {
-    console.log(`❌ 图标服务失败:`, error.message)
+      // 下载并缓存到内存（包含降级策略）
+      try {
+        const localPath = await downloadAndCacheIcon(iconServiceUrl, domain)
+        formData.value.icon = localPath
+        iconError.value = false
+        console.log(`✅ 成功下载并缓存图标: ${iconServiceUrl}`)
+        return
+      } catch (error) {
+        console.log(`❌ 图标服务失败:`, iconServiceUrl, error.message)
+      }
+    } catch (error) {
+      console.log(`❌ 图标服务失败:`, iconServiceUrl, error.message)
+      // 继续尝试下一个服务
+    }
   }
 
+  const fallbackUrl = `https://www.faviconextractor.com/favicon/${domain}`
+
   // 回退到标准favicon.ico路径
-  const fallbackUrl = `https://${domain}/favicon.ico`
+  // const fallbackUrl = `https://${domain}/favicon.ico`
 
   try {
     console.log(`🔍 尝试标准路径:`, fallbackUrl)
 
     // 先测试图标是否可用
     await testImage(fallbackUrl)
-
-    // 下载并缓存到内存
-    const localPath = await downloadAndCacheIcon(fallbackUrl, domain)
-
-    formData.value.icon = localPath
+    formData.value.icon = fallbackUrl
     iconError.value = false
-    console.log(`✅ 使用标准favicon.ico路径成功`)
+    console.log(`✅ 直接使用标准favicon.ico URL`)
     return
+    // // 下载并缓存到内存（包含降级策略）
+    // try {
+    //   const localPath = await downloadAndCacheIcon(fallbackUrl, domain)
+    //   formData.value.icon = localPath
+    //   iconError.value = false
+    //   console.log(`✅ 标准路径下载并缓存成功`)
+    //   return
+    // } catch (downloadError) {
+    //   console.warn(`⚠️ 标准路径所有下载方法都失败，但图标可用，直接使用URL: ${downloadError.message}`)
+    //   // 如果所有下载方法都失败但测试通过，直接使用URL
+    //   formData.value.icon = fallbackUrl
+    //   iconError.value = false
+    //   console.log(`✅ 直接使用标准favicon.ico URL`)
+    //   return
+    // }
   } catch (error) {
     console.log(`❌ 标准路径也失败:`, error.message)
     console.error('❌ 无法获取网站图标')
@@ -606,6 +707,21 @@ const saveSite = () => {
   closeModal()
 }
 
+// 打开添加站点弹窗
+const openAddModal = () => {
+  showAddModal.value = true
+  // 设置默认分类为当前选中的分类，如果没有选中则使用第一个分类
+  const defaultCategoryId = selectedCategoryId.value || (localCategories.value[0]?.id || '')
+  formData.value = {
+    name: '',
+    url: '',
+    description: '',
+    icon: '',
+    categoryId: defaultCategoryId
+  }
+  iconError.value = false
+}
+
 // 关闭弹窗
 const closeModal = () => {
   showAddModal.value = false
@@ -615,7 +731,7 @@ const closeModal = () => {
     url: '',
     description: '',
     icon: '',
-    categoryId: selectedCategoryId.value || (localCategories.value[0]?.id || '')
+    categoryId: ''
   }
   iconError.value = false
 }
@@ -628,21 +744,17 @@ const handleImageError = (event) => {
 // 处理保存操作
 const handleSave = async () => {
   try {
-    // 先上传待处理的图标文件
+    // 先上传待处理的图标文件（只有真正下载缓存的图标）
     if (pendingIcons.value.size > 0) {
+      console.log(`📤 开始上传 ${pendingIcons.value.size} 个缓存的图标...`)
       await uploadPendingIconsToGitHub()
+      console.log(`✅ 所有图标上传完成`)
+    } else {
+      console.log(`ℹ️ 没有需要上传的图标（可能都使用了外部URL）`)
     }
 
     // 然后保存站点数据
     emit('save')
-
-    // // 保存成功后清理预览缓存，释放内存
-    // iconPreviews.value.forEach((url) => {
-    //   URL.revokeObjectURL(url)
-    // })
-    // iconPreviews.value.clear()
-
-    // console.log('✅ 预览缓存已清理')
   } catch (error) {
     console.error('保存失败:', error)
     alert(`保存失败: ${error.message}`)
@@ -723,9 +835,11 @@ watch(selectedCategoryId, () => {
 }
 
 .stats-bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) 2fr;
   gap: 20px;
   margin-bottom: 30px;
+  align-items: center;
 }
 
 .stat-item {
@@ -748,6 +862,19 @@ watch(selectedCategoryId, () => {
   font-size: 12px;
   color: #7f8c8d;
   margin-top: 5px;
+}
+
+.stat-info {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  background: linear-gradient(135deg, #e8f5e8, #f0f8ff);
+  border-radius: 8px;
+  border-left: 4px solid #27ae60;
+  color: #2c3e50;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .sites-list {
@@ -839,13 +966,32 @@ watch(selectedCategoryId, () => {
   gap: 10px;
 }
 
-.edit-btn, .delete-btn {
+.move-btn, .edit-btn, .delete-btn {
   padding: 6px 12px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
   transition: all 0.3s ease;
+}
+
+.move-btn {
+  background: #95a5a6;
+  color: white;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.move-btn:hover:not(:disabled) {
+  background: #7f8c8d;
+}
+
+.move-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .edit-btn {
@@ -932,6 +1078,19 @@ watch(selectedCategoryId, () => {
 .modal-header h3 {
   margin: 0;
   color: #2c3e50;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-hint {
+  font-size: 14px;
+  color: #3498db;
+  background: #e8f4fd;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 400;
 }
 
 .close-btn {
@@ -1079,6 +1238,13 @@ watch(selectedCategoryId, () => {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   }
 
+  .stat-info {
+    grid-column: 1 / -1;
+    margin-top: 10px;
+    font-size: 12px;
+    padding: 10px;
+  }
+
   .site-item {
     flex-direction: column;
     align-items: flex-start;
@@ -1087,6 +1253,14 @@ watch(selectedCategoryId, () => {
 
   .site-actions {
     align-self: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .move-btn {
+    min-width: 28px;
+    padding: 4px 8px;
+    font-size: 10px;
   }
 
   .form-row {
@@ -1095,6 +1269,18 @@ watch(selectedCategoryId, () => {
 
   .icon-input-group {
     flex-direction: column;
+  }
+
+  .modal-header h3 {
+    font-size: 18px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .category-hint {
+    font-size: 12px;
+    padding: 2px 6px;
   }
 }
 </style>
