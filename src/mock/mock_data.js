@@ -473,7 +473,7 @@ export const mockData = {
         },
         {
           "id": "feishu",
-          "name": "飞书",
+          "name": "飞书-cp",
           "url": "https://www.feishu.cn",
           "description": "企业协作平台",
           "icon": "/sitelogo/www.feishu.cn.ico"
