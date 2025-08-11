@@ -481,5 +481,6 @@ export const mockData = {
       ]
     }
   ],
-  "title": "猫猫导航"
+  "title": "猫猫导航",
+  "search":"google"
 }
