@@ -8,7 +8,7 @@ export const mockData = {
       "sites": [
         {
           "id": "site-1752857783656",
-          "name": "OpenAI",
+          "name": "Ope",
           "url": "https://chatgpt.com",
           "description": "OpenAI,好用👌",
           "icon": "/sitelogo/chatgpt.com.ico"
@@ -479,9 +479,21 @@ export const mockData = {
           "icon": "/sitelogo/www.feishu.cn.ico"
         }
       ]
+    },
+    {
+      "id": "category-1758123699898",
+      "icon": "📚",
+      "name": "我的家乡",
+      "order": 0,
+      "sites": []
+    },
+    {
+      "id": "category-1758123708353",
+      "icon": "📊",
+      "name": "我的影视",
+      "order": 12,
+      "sites": []
     }
   ],
-  "title": "****俱乐部",
-  "search": "google",
-  "_fileSha": "6ae5a143e8e6178cd65dad5ef6e22975f02a3a17"
+  "title": "1俱乐部"
 }
